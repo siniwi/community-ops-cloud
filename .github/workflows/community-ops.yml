@@ -35,7 +35,7 @@ jobs:
         run: |
           JOB="${{ github.event.inputs.job }}"
           if [ -z "$JOB" ]; then [ "${{ github.event.schedule }}" = "15 6 * * *" ] && JOB=daily || JOB=hourly; fi
-          ./run.sh "$JOB"
+          bash ./run.sh "$JOB"
       - name: Keep the outputs for checking
         if: always()
         uses: actions/upload-artifact@v4
