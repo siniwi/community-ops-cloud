@@ -29,6 +29,13 @@ if [ "${PUSH:-0}" = "1" ]; then step python3 "$ROOT/drive.py" push "$DROPS"; els
 cd "$SNAP"
 OUT="$(python3 -I export_snapshot.py --drops "$DROPS" --digest "$DROPS/digest_cloud.json" --out "$SNAP/site")" || { echo "$OUT"; echo "::error::team-site build failed"; exit 1; }
 echo "$OUT" | tail -1
+python3 -I - "$SNAP/site/trends/trends_data.json" <<'PY' || true
+import json, sys, datetime
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+newest = lambda xs: datetime.datetime.fromtimestamp(max([p["c"] for p in xs if p.get("c")] or [0])).isoformat(timespec="minutes")
+print("trends data:", {k: d.get(k) for k in ("reviews_at", "forum_at", "reddit_at")}, "newest review", newest([{"c": r[0]} for r in d.get("reviews", [])]),
+      "newest forum", newest(d.get("forum", [])), "newest reddit", newest(d.get("reddit", [])), "reviews", len(d.get("reviews", [])))
+PY
 case "${DEPLOY:-off}" in
   off) echo "DEPLOY is off: site built, not published" ;;
   preview|production)
