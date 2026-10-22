@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Community Ops cloud job: the GitHub Actions version of the PC's run_quick.cmd / run_full.cmd + refresh_snapshot.py.
 # Usage: run.sh hourly|daily
-#   hourly: reddit_history, steam_summary, player_counts (the PC ran these every 10 min)
+#   hourly: reddit_history, steam_summary, player_counts (the PC ran these every 10 min), then trends_bundle
 #   daily:  + reviews_history --full, forum_history, steam_news, trends_bundle (the PC's 08:15 full pull)
 # Both then rebuild the team site. Env (repository variables):
 #   PUSH=1          write the updated history files back to Drive (otherwise they stay in this run only)
@@ -17,7 +17,7 @@ step() { echo "::group::$*"; "$@"; local rc=$?; echo "::endgroup::"; [ $rc -ne 0
 
 python3 "$ROOT/drive.py" pull "$DROPS" "$SNAP" || exit 1
 
-HIST="reddit_history.py steam_summary.py player_counts.py"
+HIST="reddit_history.py steam_summary.py player_counts.py trends_bundle.py"
 [ "$JOB" = "daily" ] && HIST="reddit_history.py reviews_history.py forum_history.py steam_news.py steam_summary.py player_counts.py trends_bundle.py"
 for h in $HIST; do
   if [ "$h" = "reviews_history.py" ]; then step python3 -I "$DROPS/$h" --full "$DROPS"; else step python3 -I "$DROPS/$h" "$DROPS"; fi
