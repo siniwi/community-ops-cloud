@@ -16,11 +16,25 @@ fail=0
 step() { echo "::group::$*"; "$@"; local rc=$?; echo "::endgroup::"; [ $rc -ne 0 ] && { echo "::warning::$* exited $rc"; fail=1; }; return 0; }
 
 python3 "$ROOT/drive.py" pull "$DROPS" "$SNAP" || exit 1
+cp -a "$DROPS" "$ROOT/work/pulled"
+
+# A script that fails (e.g. a Steam API hiccup) must not overwrite the good copy in Drive:
+# put its output file back to what was pulled, so push sees it unchanged and skips it.
+out_of() { case "$1" in steam_news.py) echo patches.json ;; *) echo "${1%.py}.json" ;; esac; }
+hist() {
+  local h="$1"; shift
+  echo "::group::$h"; python3 -I "$DROPS/$h" "$@" "$DROPS"; local rc=$?; echo "::endgroup::"
+  if [ $rc -ne 0 ]; then
+    local o; o="$(out_of "$h")"
+    if [ -f "$ROOT/work/pulled/$o" ]; then cp -a "$ROOT/work/pulled/$o" "$DROPS/$o"; else rm -f "$DROPS/$o"; fi
+    echo "::warning::$h exited $rc; kept the previous $o"; fail=1
+  fi
+}
 
 HIST="reddit_history.py steam_summary.py player_counts.py trends_bundle.py"
 [ "$JOB" = "daily" ] && HIST="reddit_history.py reviews_history.py forum_history.py steam_news.py steam_summary.py player_counts.py trends_bundle.py"
 for h in $HIST; do
-  if [ "$h" = "reviews_history.py" ]; then step python3 -I "$DROPS/$h" --full "$DROPS"; else step python3 -I "$DROPS/$h" "$DROPS"; fi
+  if [ "$h" = "reviews_history.py" ]; then hist "$h" --full; else hist "$h"; fi
 done
 
 if [ "${PUSH:-0}" = "1" ]; then step python3 "$ROOT/drive.py" push "$DROPS"; else echo "PUSH is off: history files not written back to Drive"; fi
