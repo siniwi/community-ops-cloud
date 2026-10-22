@@ -1,0 +1,51 @@
+name: Community Ops
+on:
+  schedule:
+    - cron: "7 * * * *"    # hourly: Reddit history, Steam summary, player counts, team site
+    - cron: "15 6 * * *"   # daily 06:15 UTC (08:15 CEST): full Trends pull
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "hourly or daily"
+        default: daily
+concurrency:
+  group: community-ops
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TZ: Europe/Amsterdam
+      GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PUSH: ${{ vars.PUSH || '0' }}
+      DEPLOY: ${{ vars.DEPLOY || 'off' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install --quiet google-auth==2.35.0 requests==2.32.3
+      - name: Run
+        run: |
+          JOB="${{ github.event.inputs.job }}"
+          if [ -z "$JOB" ]; then [ "${{ github.event.schedule }}" = "15 6 * * *" ] && JOB=daily || JOB=hourly; fi
+          ./run.sh "$JOB"
+      - name: Keep the outputs for checking
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: outputs
+          retention-days: 3
+          path: |
+            work/drops/*_history.json
+            work/drops/player_counts.json
+            work/drops/steam_summary.json
+            work/drops/patches.json
+            work/drops/trends_bundle.json
+            work/snapshot/site
