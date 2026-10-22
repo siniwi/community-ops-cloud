@@ -61,4 +61,7 @@ case "${DEPLOY:-off}" in
       || { echo "::error::SITE_PASSWORD is not set on aimlabs-dash (or the Cloudflare token can't read it)"; exit 1; }
     npx --yes wrangler@4 pages deploy site --project-name aimlabs-dash --branch "$BRANCH" --commit-dirty=true || exit 1 ;;
 esac
-exit $fail
+# A single failed history script (usually a Steam/Reddit hiccup) is a warning, not a red run:
+# its previous file was kept and the site still published. Pull, build and deploy failures still exit 1.
+[ $fail -ne 0 ] && echo "::warning::some history scripts failed this run; their previous files were kept"
+exit 0
