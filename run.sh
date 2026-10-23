@@ -50,18 +50,46 @@ newest = lambda xs: datetime.datetime.fromtimestamp(max([p["c"] for p in xs if p
 print("trends data:", {k: d.get(k) for k in ("reviews_at", "forum_at", "reddit_at")}, "newest review", newest([{"c": r[0]} for r in d.get("reviews", [])]),
       "newest forum", newest(d.get("forum", [])), "newest reddit", newest(d.get("reddit", [])), "reviews", len(d.get("reviews", [])))
 PY
+# Feedback tracker page (/tracker/) + the changes added in Claude chat (Drive tracker_ops/ -> tracker/ops.json).
+mkdir -p site/tracker && cp "$ROOT/tracker/index.html" site/tracker/index.html
+step python3 -I "$ROOT/tracker/build_ops.py" "$DROPS/tracker_ops" site/tracker
+# Read-only key for the tracker export below; derived from a secret this job already has, so nothing new to set up.
+TRACKER_KEY="$(printf 'community-ops-tracker:%s' "${GOOGLE_SA_JSON:-}" | sha256sum | cut -c1-64)"
 case "${DEPLOY:-off}" in
   off) echo "DEPLOY is off: site built, not published" ;;
   preview|production)
     BRANCH=main; [ "$DEPLOY" = "preview" ] && BRANCH=cloud-test
     # Live team Inbox: swaps in the Worker's 10-minute item list (no-op until TEAM_KEY is set on Pages).
     mkdir -p functions/inbox && cp "$ROOT/functions/inbox/[[path]].js" functions/inbox/
+    # Tracker API (D1 binding DB on the Pages project) and the repo's copy of the password gate (adds the export key).
+    mkdir -p functions/api && cp "$ROOT/functions/api/tracker.js" functions/api/ && cp "$ROOT/functions/_middleware.js" functions/_middleware.js
     # Same safety checks as refresh_snapshot.py: never publish without the password gate.
     [ -e site/_worker.js ] && { echo "::error::site/_worker.js would bypass the password gate"; exit 1; }
     [ -f functions/_middleware.js ] || { echo "::error::functions/_middleware.js (the password gate) is missing"; exit 1; }
-    npx --yes wrangler@4 pages secret list --project-name aimlabs-dash 2>&1 | grep -q SITE_PASSWORD \
+    SECRETS="$(npx --yes wrangler@4 pages secret list --project-name aimlabs-dash 2>&1)"
+    echo "$SECRETS" | grep -q SITE_PASSWORD \
       || { echo "::error::SITE_PASSWORD is not set on aimlabs-dash (or the Cloudflare token can't read it)"; exit 1; }
-    npx --yes wrangler@4 pages deploy site --project-name aimlabs-dash --branch "$BRANCH" --commit-dirty=true || exit 1 ;;
+    if [ "$DEPLOY" = "production" ] && ! echo "$SECRETS" | grep -q TRACKER_KEY; then
+      printf %s "$TRACKER_KEY" | npx --yes wrangler@4 pages secret put TRACKER_KEY --project-name aimlabs-dash >/dev/null 2>&1 \
+        && echo "set TRACKER_KEY on aimlabs-dash" || echo "::warning::could not set TRACKER_KEY; the tracker export to Drive is skipped"
+    fi
+    npx --yes wrangler@4 pages deploy site --project-name aimlabs-dash --branch "$BRANCH" --commit-dirty=true || exit 1
+    # Mirror the tracker to Drive (tracker_export.json) so Claude and the Inbox can read it. Each read also
+    # applies pending chat changes in slices, so repeat until none are left.
+    if [ "$DEPLOY" = "production" ]; then
+      ok=0
+      for i in $(seq 1 40); do
+        curl -fsS --max-time 30 -H "x-tracker-key: $TRACKER_KEY" https://aimlabs-dash.pages.dev/api/tracker -o "$ROOT/work/tracker.json" || break
+        left="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1])).get("pending", 0))' "$ROOT/work/tracker.json" 2>/dev/null || echo x)"
+        [ "$left" = "0" ] && { ok=1; break; }
+      done
+      if [ $ok = 1 ]; then
+        python3 -I "$ROOT/tracker/export.py" "$ROOT/work/tracker.json" "$DROPS/tracker_export.json"
+        [ "${PUSH:-0}" = "1" ] && step python3 "$ROOT/drive.py" push "$DROPS" tracker_export.json
+      else
+        echo "::warning::tracker export failed (site not reachable with the key yet, or changes still pending)"
+      fi
+    fi ;;
 esac
 # A single failed history script (usually a Steam/Reddit hiccup) is a warning, not a red run:
 # its previous file was kept and the site still published. Pull, build and deploy failures still exit 1.
