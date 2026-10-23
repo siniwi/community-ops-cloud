@@ -179,6 +179,21 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
   .detail{padding:12px}
   .foot .acts{margin-left:0}
 }
+/* Suggested */
+.badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--teal);color:var(--on-teal);font:700 12px/20px var(--font-display);text-align:center}
+.badge:empty{display:none}
+#sugbtn[aria-pressed="true"]{background:var(--fill-hover);box-shadow:inset 0 0 0 1px var(--teal-ink)}
+.sug #stages,.sug #sort,.sug .frow,.sug #more-filters,.sug #extra-filters,.sug #csv{display:none!important}
+.tag.match{background:var(--teal-wash);color:var(--teal-ink)}
+.sstats{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.sacts{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sacts .btn .mt{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;color:var(--muted)}
+.reps{display:grid;gap:8px}
+.rep{background:var(--surface);border-radius:12px;padding:10px 14px;display:grid;gap:4px}
+.rtop{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:13px;color:var(--muted)}
+.rtop .x{margin-left:auto;height:28px;padding:0 6px}
+.rtxt{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.rorig{font-size:13px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;border-left:2px solid var(--line);padding-left:10px}
 [hidden]{display:none!important}
 @media (hover:hover) and (pointer:fine){
   .tab:not([aria-selected="true"]):hover{color:var(--ink)}
@@ -221,6 +236,7 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
   <div class="navrow">
     <div class="tabs" role="tablist" id="kinds"></div>
     <div class="acts">
+      <button class="btn" id="sugbtn" aria-pressed="false"><span data-ic="tray"></span>Suggested<span class="badge" id="sugn"></span></button>
       <button class="btn ghost" id="csv"><span data-ic="download-simple"></span>CSV</button>
       <button class="btn primary" id="add"><span data-ic="plus"></span>Add entry</button>
     </div>
@@ -307,7 +323,8 @@ function paintIcons(root = document) { root.querySelectorAll("[data-ic]").forEac
 const store = { get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 
 const S = { entries: [], db: false, kinds: [], priorities: [], labels: [], sources: [], platforms: [], statuses: [], hints: {}, jiraBase: "",
-  kind: "all", stage: "", area: new Set(), label: new Set(), source: new Set(), platform: new Set(), q: "", sort: "priority", open: new Set(), full: new Set(), logs: {} };
+  kind: "all", stage: "", area: new Set(), label: new Set(), source: new Set(), platform: new Set(), q: "", sort: "priority", open: new Set(), full: new Set(), logs: {},
+  view: "board", suggestions: [], sopen: new Set() };
 const DONE = "Closed";
 const fmt = (d) => { if (!d) return ""; const t = new Date(d.length === 10 ? d + "T12:00:00" : d); return isNaN(t) ? d : t.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); };
 const reports = (e) => Math.max(1 + (e.links || []).length, +(e.extra && e.extra.reports) || 0);
@@ -333,7 +350,7 @@ async function load(again = 0) {
     return;
   }
   Object.assign(S, { entries: d.entries || [], db: !!d.db, kinds: d.kinds || [], priorities: d.priorities || [], labels: d.labels || [],
-    sources: d.sources || [], platforms: d.platforms || [], statuses: d.statuses || [], hints: d.stage_hints || {}, jiraBase: d.jira_base || "" });
+    sources: d.sources || [], platforms: d.platforms || [], statuses: d.statuses || [], hints: d.stage_hints || {}, jiraBase: d.jira_base || "", suggestions: d.suggestions || [] });
   $("#mode").textContent = S.db ? (d.pending ? `Importing, ${d.pending} left…` : "Live, saves for everyone") : "Read-only";
   $("#mode-dot").className = "pulse " + (S.db ? "ok" : "warn");
   const b = $("#banner");
@@ -367,7 +384,16 @@ function chipRow(el, values, set, attr, count) {
   el.innerHTML = values.map((v) => `<button class="chipbtn" data-${attr}="${esc(v)}" aria-pressed="${set.has(v)}">${esc(v)}<span class="n">${count(v)}</span></button>`).join("");
 }
 
+function kindTabs(xs) {
+  $("#kinds").innerHTML = [["all", "All"], ["Bug", "Bugs"], ["Feedback", "Feedback"], ["Request", "Requests"]].map(([k, label]) =>
+    `<button class="tab" role="tab" data-kind="${esc(k)}" aria-label="${esc(label)}" aria-selected="${S.kind === k}">${KIND_TAG[k] ? `<span class="kic ${KIND_TAG[k][0]}">${ic(KIND_TAG[k][1], 15)}</span>` : ""}<span class="${KIND_TAG[k] ? "tl" : ""}">${esc(label)}</span><span class="n">${xs.filter((e) => k === "all" || e.kind === k).length}</span></button>`).join("");
+}
 function render() {
+  const sug = S.view === "suggest";
+  document.body.classList.toggle("sug", sug);
+  $("#sugbtn").setAttribute("aria-pressed", sug);
+  $("#sugn").textContent = S.suggestions.length || "";
+  if (sug) return renderSuggest();
   const all = S.entries;
   const inView = all.filter((e) => matches(e));
   // next-step board: counts follow the type, area, label, source and search filters
@@ -378,8 +404,7 @@ function render() {
       <span class="sub">${hi ? `<b class="neg">${hi} very high+</b> · ` : ""}${esc(S.hints[s] || "")}</span></button>`;
   }).join("");
   const scope = all.filter((e) => (!S.stage ? e.status !== DONE : e.status === S.stage));
-  $("#kinds").innerHTML = [["all", "All"], ["Bug", "Bugs"], ["Feedback", "Feedback"], ["Request", "Requests"]].map(([k, label]) =>
-    `<button class="tab" role="tab" data-kind="${esc(k)}" aria-label="${esc(label)}" aria-selected="${S.kind === k}">${KIND_TAG[k] ? `<span class="kic ${KIND_TAG[k][0]}">${ic(KIND_TAG[k][1], 15)}</span>` : ""}<span class="${KIND_TAG[k] ? "tl" : ""}">${esc(label)}</span><span class="n">${scope.filter((e) => k === "all" || e.kind === k).length}</span></button>`).join("");
+  kindTabs(scope);
   const areaScope = scope.filter((e) => matches(e, "area"));
   chipRow($("#areas"), AREA_NAMES.filter((a) => areaScope.some((e) => areaOf(e) === a) || S.area.has(a)), S.area, "area", (v) => areaScope.filter((e) => areaOf(e) === v).length);
   const sc2 = scope.filter((e) => S.kind === "all" || e.kind === S.kind);
@@ -455,6 +480,130 @@ function detail(e) {
   </div>`;
 }
 
+// ---- Suggested: reports the morning run sorted and translated, waiting for one tap ----
+const LANGS = { english: "English", schinese: "Chinese", tchinese: "Chinese (Trad.)", russian: "Russian", spanish: "Spanish", latam: "Spanish (LatAm)",
+  brazilian: "Portuguese (BR)", portuguese: "Portuguese", turkish: "Turkish", german: "German", french: "French", polish: "Polish", japanese: "Japanese",
+  koreana: "Korean", ukrainian: "Ukrainian", italian: "Italian", thai: "Thai", czech: "Czech", vietnamese: "Vietnamese", dutch: "Dutch" };
+const langName = (l) => LANGS[l] || (l ? l[0].toUpperCase() + l.slice(1) : "English");
+const xLang = (x) => (x.lang ? langName(x.lang) : x.english ? "Translated" : "English");
+const STOP = new Set("the and for with that this are was but not you your have has had its it's can cant can't from they them their there when what why how all any too very just more most some into out about been were will would could should after before since than then also only even still does doesn't don't didn't get got use using used game aimlabs aimlab player players user users want wants like add please update updates updated issue issues problem match matches".split(" "));
+const stem = (w) => (w.length > 4 ? w.replace(/(ings?|ed|es|s)$/, "") : w);
+const toks = (t) => new Set((String(t || "").toLowerCase().match(/[\p{L}\p{N}+]{3,}/gu) || []).filter((w) => !STOP.has(w)).map(stem));
+const overlap = (a, b) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n; };
+const tokCache = new Map();
+function entryToks(e) {
+  const k = e.id + "|" + e.updated_at;
+  if (!tokCache.has(k)) tokCache.set(k, toks(`${e.title} ${(e.summary || "").slice(0, 160)}`));
+  return tokCache.get(k);
+}
+function sugGroups(xs) {
+  // same kind + same issue wording, then fold near-identical wordings together
+  const by = new Map();
+  for (const x of xs) {
+    const k = x.kind + "|" + (x.issue || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    if (!by.has(k)) by.set(k, { id: x.sid, kind: x.kind, issue: x.issue, items: [] });
+    by.get(k).items.push(x);
+  }
+  const gs = [...by.values()];
+  for (let i = 0; i < gs.length; i++) for (let j = i + 1; j < gs.length; j++) {
+    const a = gs[i], b = gs[j];
+    if (!a || !b || a.kind !== b.kind) continue;
+    const ta = toks(a.issue), tb = toks(b.issue), n = overlap(ta, tb);
+    if (n >= 2 && n / Math.min(ta.size, tb.size) >= 0.75) { a.items.push(...b.items); gs[j] = null; }
+  }
+  return gs.filter(Boolean).map((g) => {
+    g.items.sort((a, b) => (b.posted_at || "").localeCompare(a.posted_at || ""));
+    g.area = g.items[0].area || "";
+    // likely tracker entries: the issue line against entry titles (cheap word overlap, no Claude)
+    const q = toks(g.issue);
+    g.matches = q.size ? S.entries.filter((e) => e.status !== DONE).map((e) => {
+      const et = entryToks(e), n = overlap(q, et);
+      return [e, n, n / Math.sqrt(q.size * Math.max(et.size, 1))];
+    }).filter(([, n, sc]) => n >= 2 && sc >= 0.3).sort((a, b) => b[2] - a[2]).slice(0, 3).map(([e]) => e) : [];
+    return g;
+  });
+}
+function renderSuggest() {
+  const q = S.q.trim().toLowerCase();
+  const xs = S.suggestions.filter((x) => !q || [x.issue, x.text, x.english, x.title, x.area, x.source, xLang(x)].join(" ").toLowerCase().includes(q));
+  kindTabs(xs);
+  const gs = sugGroups(xs.filter((x) => S.kind === "all" || x.kind === S.kind))
+    .sort((a, b) => b.items.length - a.items.length || (b.items[0].posted_at || "").localeCompare(a.items[0].posted_at || ""));
+  S.groups = new Map(gs.map((g) => [g.id, g]));
+  $("#list").innerHTML = `<section class="group">
+    <div class="ghead"><h2>Suggested</h2><span class="n">${gs.length}</span><span class="ghint">New Steam reviews, Reddit and Steam forum posts, sorted and translated each weekday morning. Add them, +1 an entry, or dismiss.</span></div>
+    <div class="rows">${gs.map(sugRow).join("") || `<div class="empty sm">${S.suggestions.length ? "Nothing matches these filters." : "All caught up. New reports show up here after the next weekday morning run."}</div>`}</div>
+  </section>`;
+}
+function sugRow(g) {
+  const open = S.sopen.has(g.id), n = g.items.length;
+  const langs = {}; for (const x of g.items) langs[xLang(x)] = (langs[xLang(x)] || 0) + 1;
+  const neg = g.items.filter((x) => x.sentiment === "negative" || x.voted_up === false).length;
+  const newest = g.items[0].posted_at ? Math.max(0, Math.floor((Date.now() - Date.parse(g.items[0].posted_at)) / 864e5)) : null;
+  return `<article class="item ${open ? "is-open" : ""}">
+    <button class="line" data-sugtoggle="${esc(g.id)}" aria-expanded="${open}">
+      ${ktag(g.kind)}
+      <span class="ltitle">${esc(g.issue)}</span>
+      <span class="lmeta">
+        ${g.area ? `<span class="tag area">${esc(g.area)}</span>` : ""}
+        ${n > 1 ? `<span class="tag">×${n}</span>` : ""}
+        ${g.matches.length ? `<span class="tag match">#${esc(g.matches[0].n)}?</span>` : ""}
+        <span class="age">${newest === null ? "" : newest + "d"}</span>
+      </span>
+    </button>
+    ${open ? sugDetail(g, langs, neg) : ""}
+  </article>`;
+}
+function sugDetail(g, langs, neg) {
+  const n = g.items.length, src = {};
+  for (const x of g.items) src[x.source] = (src[x.source] || 0) + 1;
+  const pts = g.items.map((x) => x.playtime_h).filter((v) => typeof v === "number");
+  const dates = g.items.map((x) => (x.posted_at || "").slice(0, 10)).filter(Boolean).sort();
+  const stats = [`${n} report${n > 1 ? "s" : ""}`, Object.entries(src).map(([k, v]) => `${k} ${v}`).join(", "),
+    Object.entries(langs).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", "),
+    neg ? `${neg} negative` : "", pts.length ? `avg playtime ${Math.round(pts.reduce((a, b) => a + b, 0) / pts.length)} h` : "",
+    dates.length ? (dates[0] === dates[dates.length - 1] ? fmt(dates[0]) : `${fmt(dates[0])} to ${fmt(dates[dates.length - 1])}`) : ""].filter(Boolean);
+  return `<div class="detail">
+    <div class="sstats">${stats.map((t) => `<span>${esc(t)}</span>`).join("")}</div>
+    ${S.db ? `<div class="sacts">
+      <button class="btn sm primary" data-sugadd="${esc(g.id)}">${ic("plus", 14)}Add as new</button>
+      ${g.matches.map((e) => `<button class="btn sm" data-sugmerge="${esc(g.id)}" data-into="${esc(e.n)}" title="${esc(e.title)}">+${n} to #${esc(e.n)} <span class="mt">${esc(e.title)}</span></button>`).join("")}
+      <span class="merge"><input data-sugin="${esc(g.id)}" inputmode="numeric" placeholder="#" aria-label="Add these reports to entry number"><button class="btn sm ghost" data-sugmerge="${esc(g.id)}">Add to #</button></span>
+      <button class="btn sm ghost" data-sugdismiss="${esc(g.id)}">Dismiss${n > 1 ? " all" : ""}</button>
+    </div>` : ""}
+    <div class="reps">${g.items.map((x) => {
+      const url = safeUrl(x.url), orig = x.english ? x.text : "";
+      return `<div class="rep">
+        <div class="rtop"><span class="tag">${esc(x.source)}</span><span>${esc(xLang(x))}</span>
+          ${x.voted_up === true ? `<span class="pos">Recommended</span>` : x.voted_up === false ? `<span class="neg">Not recommended</span>` : ""}
+          ${typeof x.playtime_h === "number" ? `<span>${esc(x.playtime_h)} h played</span>` : ""}
+          <span>${esc(fmt((x.posted_at || "").slice(0, 10)))}</span>
+          ${url ? `<a class="qlink inl" href="${esc(url)}" target="_blank" rel="noopener">Open${ic("arrow-square-out", 13)}</a>` : ""}
+          ${S.db && n > 1 ? `<button class="btn sm ghost x" data-sugdrop="${esc(x.sid)}" aria-label="Dismiss this report">${ic("x", 14)}</button>` : ""}</div>
+        <div class="rtxt">${esc(x.english || x.text)}</div>
+        ${orig ? `<div class="rorig">${esc(orig)}</div>` : ""}
+      </div>`;
+    }).join("")}</div>
+  </div>`;
+}
+async function sugAct(action, g, extra = {}) {
+  const by = whoAmI(); if (!by) return;
+  const sids = g.items.map((x) => x.sid);
+  try {
+    const d = await post({ action, sids, by, ...extra });
+    S.sopen.delete(g.id);
+    toast(action === "suggest_add" ? `Added #${d.entry.n} to Triage` : action === "suggest_merge" ? `+${d.done.length} on #${d.into.n}` : "Dismissed");
+    render();
+  } catch (err) { toast(err.message); }
+}
+function sugEntry(g) {
+  const first = g.items[0], plats = [...new Set(g.items.flatMap((x) => x.platforms || []))];
+  const dates = g.items.map((x) => (x.posted_at || "").slice(0, 10)).filter(Boolean).sort();
+  const langs = [...new Set(g.items.map(xLang))];
+  return { kind: g.kind, area: g.area, title: g.issue, summary: first.english || first.text, source: first.source, posted_at: dates[0] || "",
+    platforms: plats, priority: "", tags: [g.items.length > 1 ? "Multiple reports" : "Single report"], extra: { langs } };
+}
+
 function highlight() {
   const id = decodeURIComponent(location.hash.slice(1));
   if (!id || highlight.done === id) return;
@@ -477,6 +626,7 @@ async function post(body) {
   const r = await fetch("/api/tracker", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const d = await r.json();
   if (!r.ok) throw new Error(d.error || "Not saved");
+  if (d.done) S.suggestions = S.suggestions.filter((x) => !d.done.includes(x.sid));
   for (const x of [d.entry, d.into].filter(Boolean)) {
     const i = S.entries.findIndex((y) => y.id === x.id);
     if (i >= 0) S.entries[i] = x; else S.entries.unshift(x);
@@ -595,6 +745,15 @@ document.addEventListener("click", async (ev) => {
     else { try { S.logs[d.log] = (await (await fetch("/api/tracker?log=" + encodeURIComponent(d.log), { cache: "no-store" })).json()).log || []; } catch { S.logs[d.log] = []; } }
     render();
   }
+  else if (d.sugtoggle) { toggle(S.sopen, d.sugtoggle); render(); }
+  else if (d.sugadd) sugAct("suggest_add", S.groups.get(d.sugadd), { entry: sugEntry(S.groups.get(d.sugadd)) });
+  else if (d.sugmerge) {
+    const into = d.into || (document.querySelector(`[data-sugin="${CSS.escape(d.sugmerge)}"]`)?.value || "").trim();
+    if (!into) { toast("Type the # of the entry to add these reports to"); return; }
+    sugAct("suggest_merge", S.groups.get(d.sugmerge), { into });
+  }
+  else if (d.sugdismiss) sugAct("suggest_dismiss", S.groups.get(d.sugdismiss));
+  else if (d.sugdrop) sugAct("suggest_dismiss", { items: [{ sid: d.sugdrop }] });
   else if (d.fkind) { F.kind = d.fkind; paintForm(); }
   else if (d.fstatus) { F.status = d.fstatus; paintForm(); }
   else if (d.fpriority) { F.priority = d.fpriority; paintForm(); }
@@ -605,6 +764,7 @@ document.addEventListener("click", async (ev) => {
 });
 $("#more-filters").onclick = (ev) => { const x = $("#extra-filters"); x.hidden = !x.hidden; ev.currentTarget.setAttribute("aria-expanded", !x.hidden); };
 $("#add").onclick = () => openSheet(null);
+$("#sugbtn").onclick = () => { S.view = S.view === "suggest" ? "board" : "suggest"; S.kind = "all"; render(); window.scrollTo({ top: 0 }); };
 $("#close").onclick = $("#cancel").onclick = () => $("#sheet").close();
 $("#form").onsubmit = save;
 $("#csv").onclick = csv;

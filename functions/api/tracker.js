@@ -12,6 +12,14 @@
 //   POST /api/tracker {action:"add", entry, by}             -> { entry }
 //   POST /api/tracker {action:"update", id, set, by}        -> { entry }
 //   POST /api/tracker {action:"merge", id, into, by}        -> { entry, into } folds a duplicate into #into as one more report
+//   POST /api/tracker {action:"suggest_add", sids, entry, by}    -> { entry, done }  Suggested reports become a new entry
+//   POST /api/tracker {action:"suggest_merge", sids, into, by}   -> { into, done }   ... or extra reports on #into
+//   POST /api/tracker {action:"suggest_dismiss", sids, by}       -> { done }
+//
+// Suggested: the weekday morning run sorts new Steam reviews, Reddit posts and Steam forum threads
+// into bug / feedback / request with an English translation, and drops them in tracker_ops/ as
+// {"op_id", "type": "suggest", "at", "item": {...}} ops. They wait in tracker_suggest until someone
+// on the team adds, merges or dismisses them on the page; nothing reaches the tracker on its own.
 //
 // Slack: with the secret SLACK_WEBHOOK_URL set, each new entry (not imports) is posted as its own
 // message, so the team can discuss it in that message's thread. Without it nothing is sent.
@@ -51,12 +59,13 @@ const TEXT_SQL = TEXT.map((c) => `${qc(c)} TEXT`).join(", ");
 let ready = false, initSpent = 0; // queries used by setup, taken off the next request's op budget
 async function init(db) {
   if (ready) return;
-  initSpent = 4;
+  initSpent = 5;
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS tracker (id TEXT PRIMARY KEY, n INTEGER, ${TEXT_SQL}, jira_key TEXT, links TEXT,
       shots TEXT, tags TEXT, platforms TEXT, extra TEXT, added_at TEXT, added_by TEXT, updated_at TEXT, updated_by TEXT, slack TEXT)`),
     db.prepare("CREATE TABLE IF NOT EXISTS tracker_ops (op_id TEXT PRIMARY KEY, at TEXT)"),
     db.prepare("CREATE TABLE IF NOT EXISTS tracker_log (at TEXT, id TEXT, by TEXT, field TEXT, old TEXT, new TEXT)"),
+    db.prepare(`CREATE TABLE IF NOT EXISTS tracker_suggest (sid TEXT PRIMARY KEY, at TEXT, data TEXT, state TEXT, "into" TEXT, by TEXT, done_at TEXT)`),
   ]);
   const { results } = await db.prepare("PRAGMA table_info(tracker)").all();
   const have = new Set(results.map((r) => r.name));
@@ -179,6 +188,31 @@ async function readOps(ctx) {
 // Apply chat/import ops once each. Free-plan Functions get ~50 D1 queries per request, so each request
 // applies a slice and reports how many are left; the page and the hourly export call again until 0.
 const QUERY_BUDGET = 36;
+// One suggested report, as written by the morning run. Unknown fields are dropped.
+const SUGGEST_SOURCES = ["Steam review", "Steam forum", "Reddit"];
+function cleanSuggest(it) {
+  const num = (v) => (Number.isFinite(+v) ? +v : null);
+  return {
+    sid: clip(it.sid, 120), source: SUGGEST_SOURCES.includes(it.source) ? it.source : "Other",
+    url: /^https?:\/\//i.test(it.url || "") ? clip(it.url, 1000) : "", posted_at: clip(it.posted_at, 40), lang: clip(it.lang, 40),
+    title: clip(it.title, 300), author: clip(it.author, 80), text: clip(it.text, 2000), english: clip(it.english, 2000),
+    kind: KINDS.includes(it.kind) ? it.kind : "Feedback", area: clip(it.area, 60), issue: clip(it.issue, 160) || clip(it.title || it.text, 120),
+    sentiment: ["positive", "neutral", "negative"].includes(it.sentiment) ? it.sentiment : "neutral",
+    voted_up: typeof it.voted_up === "boolean" ? it.voted_up : null, playtime_h: num(it.playtime_h),
+    platforms: (Array.isArray(it.platforms) ? it.platforms : []).filter((x) => PLATFORMS.includes(x)),
+  };
+}
+async function openSuggestions(db, sids) {
+  const ids = [...new Set((Array.isArray(sids) ? sids : []).map((x) => clip(x, 120)).filter(Boolean))].slice(0, 60);
+  if (!ids.length) return [];
+  const { results } = await db.prepare(`SELECT sid, data FROM tracker_suggest WHERE state = 'new' AND sid IN (${ids.map(() => "?").join(", ")})`).bind(...ids).all();
+  return results.map((r) => JSON.parse(r.data));
+}
+const closeSuggestions = (db, items, state, into, by, at) => db.prepare(`UPDATE tracker_suggest SET state = ?, "into" = ?, by = ?, done_at = ?
+  WHERE state = 'new' AND sid IN (${items.map(() => "?").join(", ")})`).bind(state, into, by, at, ...items.map((x) => x.sid));
+const reportLine = (x) => `- ${x.source}${x.lang && x.lang !== "english" ? ` (${x.lang})` : ""}${x.posted_at ? ", " + x.posted_at.slice(0, 10) : ""}: `
+  + `${(x.english || x.text).replace(/\s+/g, " ").slice(0, 300)}${x.english && x.text ? `\n  Original: ${x.text.replace(/\s+/g, " ").slice(0, 300)}` : ""}`;
+
 function insertStmt(db, e) {
   const r = toRow(e);
   const cols = COLS.filter((c) => c !== "n");
@@ -213,6 +247,11 @@ async function applyOps(ctx, db, bundle) {
       if (id) await update(db, id, op.set, op.by || "Claude (chat)", at);
       await claim.run();
       used += 4;
+    } else if (op.type === "suggest" && op.item?.sid) {
+      const it = cleanSuggest(op.item);
+      await db.batch([claim, db.prepare("INSERT INTO tracker_suggest (sid, at, data, state) VALUES (?, ?, ?, 'new') ON CONFLICT(sid) DO NOTHING")
+        .bind(it.sid, at, JSON.stringify(it))]);
+      used += 2;
     } else { await claim.run(); used += 1; }
   }
   const left = pending.length - i;
@@ -220,7 +259,7 @@ async function applyOps(ctx, db, bundle) {
   return left;
 }
 // Read-only fallback before the D1 binding exists: replay the ops in memory.
-function replay(bundle) {
+function replay(bundle, suggestions = []) {
   const byId = new Map(); let n = 0;
   for (const op of bundle.ops || []) {
     if (op.type === "add" && op.entry && !byId.has(op.entry.id)) { const e = fresh(op.entry, op.by || "Claude (chat)", op.at || ""); e.n = ++n; byId.set(e.id, e); }
@@ -232,6 +271,7 @@ function replay(bundle) {
       }
     }
   }
+  for (const op of bundle.ops || []) if (op.type === "suggest" && op.item?.sid) suggestions.push(cleanSuggest(op.item));
   return [...byId.values()];
 }
 
@@ -242,7 +282,7 @@ const meta = (env) => ({ statuses: STATUSES, stage_hints: STAGE_HINTS, kinds: KI
 export async function onRequestGet(ctx) {
   const { env, request } = ctx;
   const bundle = await readOps(ctx);
-  if (!env.DB) return json({ db: false, entries: replay(bundle), ...meta(env) });
+  if (!env.DB) { const suggestions = []; return json({ db: false, entries: replay(bundle, suggestions), suggestions, ...meta(env) }); }
   await init(env.DB);
   const logId = new URL(request.url).searchParams.get("log");
   if (logId) {
@@ -250,8 +290,9 @@ export async function onRequestGet(ctx) {
     return json({ log: results });
   }
   const pending = await applyOps(ctx, env.DB, bundle);
-  const { results } = await env.DB.prepare("SELECT * FROM tracker ORDER BY n DESC").all();
-  return json({ db: true, pending, entries: results.map(fromRow), ...meta(env) });
+  const [{ results }, sug] = await env.DB.batch([env.DB.prepare("SELECT * FROM tracker ORDER BY n DESC"),
+    env.DB.prepare("SELECT data FROM tracker_suggest WHERE state = 'new' ORDER BY at DESC LIMIT 1500")]);
+  return json({ db: true, pending, entries: results.map(fromRow), suggestions: sug.results.map((r) => JSON.parse(r.data)), ...meta(env) });
 }
 
 export async function onRequestPost(ctx) {
@@ -292,6 +333,37 @@ export async function onRequestPost(ctx) {
     const t2 = await getOne(env.DB, target.id);
     const d2 = await update(env.DB, dup.id, { status: "Closed", dup_of: target.id, tags: [...new Set([...(dup.tags || []), "Duplicate"])] }, by, at);
     return json({ entry: d2, into: t2 });
+  }
+  if (body.action === "suggest_add" || body.action === "suggest_merge" || body.action === "suggest_dismiss") {
+    const items = await openSuggestions(env.DB, body.sids);
+    if (!items.length) return json({ error: "Already handled by someone else. Reload to see the latest." }, 409);
+    const done = items.map((x) => x.sid);
+    if (body.action === "suggest_dismiss") {
+      await closeSuggestions(env.DB, items, "dismissed", "", by, at).run();
+      return json({ done });
+    }
+    const urls = items.map((x) => x.url).filter(Boolean);
+    if (body.action === "suggest_add") {
+      const input = body.entry || {};
+      if (!clip(input.title, 1000)) return json({ error: "A title is needed." }, 400);
+      const e = fresh({ ...input, id: "", url: input.url || urls[0] || "", links: [...new Set([...(input.links || []), ...urls.slice(1)])],
+        status: input.status || "Triage", notes: [input.notes, "From Suggested:\n" + items.map(reportLine).join("\n")].filter(Boolean).join("\n\n"),
+        extra: { ...(input.extra || {}), reports: items.length, suggested: done } }, by, at);
+      await env.DB.batch([insertStmt(env.DB, e), closeSuggestions(env.DB, items, "added", e.id, by, at)]);
+      return json({ entry: await getOne(env.DB, e.id), done });
+    }
+    const into = String(body.into ?? "").replace(/^#/, "");
+    const row = /^\d+$/.test(into) ? await env.DB.prepare("SELECT id FROM tracker WHERE n = ?").bind(+into).first() : { id: into };
+    const target = row && (await getOne(env.DB, row.id));
+    if (!target) return json({ error: "Entry not found. Check the # number." }, 404);
+    const links = [...new Set([...(target.links || []), ...urls].filter((l) => l && l !== target.url))];
+    const tags = [...new Set([...(target.tags || []).filter((t) => t !== "Single report"), "Multiple reports"])];
+    const note = `+${items.length} from Suggested:\n` + items.map(reportLine).join("\n");
+    await update(env.DB, target.id, { links, tags, notes: [target.notes, note].filter(Boolean).join("\n\n") }, by, at);
+    const extra = { ...target.extra, reports: reportsOf(target) + items.length };
+    await env.DB.batch([env.DB.prepare("UPDATE tracker SET extra = ? WHERE id = ?").bind(JSON.stringify(extra), target.id),
+      closeSuggestions(env.DB, items, "merged", target.id, by, at)]);
+    return json({ into: await getOne(env.DB, target.id), done });
   }
   return json({ error: "unknown action" }, 400);
 }

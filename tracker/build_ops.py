@@ -9,7 +9,8 @@
 screenshots to <site_tracker_dir>/shots/. functions/api/tracker.js applies each op once (by op_id).
 
 An op is {"op_id", "type": "add"|"update", "at", "by", "entry": {...}} or {..., "id"|"n", "set": {...}};
-"notify": false skips the Slack post (imports).
+"notify": false skips the Slack post (imports). {"op_id", "type": "suggest", "at", "item": {...}} is a report the
+morning run found (Suggested tab); it waits there until someone on the team adds or dismisses it.
 """
 import hashlib, json, os, shutil, sys
 
@@ -25,6 +26,8 @@ def main(dest, *srcs):
             p = os.path.join(root, name)
             if name.lower().endswith(IMAGES):
                 shutil.copyfile(p, os.path.join(dest, "shots", name))
+            elif name.startswith("labels-"):
+                continue  # the morning run's sorting answers, read by intake.py
             elif name.endswith(".json"):
                 try:
                     with open(p, encoding="utf-8") as fh:
@@ -34,7 +37,7 @@ def main(dest, *srcs):
                     bad += 1
                     continue
                 for op in d.get("ops", [d]) if isinstance(d, dict) else d:
-                    if isinstance(op, dict) and op.get("op_id") and op.get("type") in ("add", "update"):
+                    if isinstance(op, dict) and op.get("op_id") and op.get("type") in ("add", "update", "suggest"):
                         ops.append(op)
                     else:
                         bad += 1
