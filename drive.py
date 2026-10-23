@@ -5,7 +5,8 @@ Uses the same Google service account as the Cloudflare Worker (secret GOOGLE_SA_
 The service account has no storage of its own, so it only ever overwrites files that already exist.
 
   python drive.py pull <drops_dir> <snapshot_dir>   download the drops folder (top level) and snapshot_handover/
-  python drive.py push <drops_dir>                  upload the files in PUSHABLE that changed since the pull
+  python drive.py push <drops_dir> [names...]      upload the files in PUSHABLE (or just [names]) that changed since the pull
+Also pulls tracker_ops/ (feedback-tracker entries added in Claude chat, one JSON file per change, plus screenshots).
 """
 import hashlib, json, os, sys
 from google.oauth2 import service_account
@@ -13,10 +14,11 @@ from google.auth.transport.requests import AuthorizedSession
 
 DROPS_FOLDER = "1MM6oSIGPGcBNGA_OyC703LRl_E7bIFy4"   # "Community Ops - Reddit drops"
 SNAPSHOT_FOLDER = "snapshot_handover"               # the team-site kit, inside the drops folder
+TRACKER_FOLDER = "tracker_ops"                      # tracker changes from Claude chat, inside the drops folder
 KEEP = (".json", ".py", ".xml", ".txt")
 # Files the cloud jobs write. Everything else in the folder is read-only for them.
 PUSHABLE = {"reddit_history.json", "player_counts.json", "steam_summary.json", "reviews_history.json",
-            "forum_history.json", "patches.json", "trends_bundle.json"}
+            "forum_history.json", "patches.json", "trends_bundle.json", "tracker_export.json"}
 FOLDER = "application/vnd.google-apps.folder"
 API = "https://www.googleapis.com/drive/v3/files"
 
@@ -72,6 +74,8 @@ def pull(drops, snap):
         if f["mimeType"] == FOLDER:
             if f["name"] == SNAPSHOT_FOLDER:
                 kit = f["id"]
+            elif f["name"] == TRACKER_FOLDER:
+                print(f"pulled {pull_tree(s, f['id'], os.path.join(drops, TRACKER_FOLDER))} tracker files")
             continue
         if not f["name"].endswith(KEEP):
             continue
@@ -86,11 +90,11 @@ def pull(drops, snap):
     print(f"pulled {pull_tree(s, kit, snap)} team-site kit files")
 
 
-def push(drops):
+def push(drops, only=None):
     s = session()
     with open(os.path.join(drops, ".manifest.json")) as fh:
         manifest = json.load(fh)
-    for name in sorted(PUSHABLE):
+    for name in sorted(PUSHABLE & set(only) if only else PUSHABLE):
         p = os.path.join(drops, name)
         if name not in manifest:
             print(f"skip {name}: not in Drive yet (the service account can only overwrite existing files)")
@@ -108,6 +112,6 @@ if __name__ == "__main__":
     if sys.argv[1:2] == ["pull"]:
         pull(sys.argv[2], sys.argv[3])
     elif sys.argv[1:2] == ["push"]:
-        push(sys.argv[2])
+        push(sys.argv[2], sys.argv[3:])
     else:
         sys.exit(__doc__)
