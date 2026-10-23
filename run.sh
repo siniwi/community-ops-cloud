@@ -52,7 +52,7 @@ print("trends data:", {k: d.get(k) for k in ("reviews_at", "forum_at", "reddit_a
 PY
 # Feedback tracker page (/tracker/) + the changes added in Claude chat (Drive tracker_ops/ -> tracker/ops.json).
 mkdir -p site/tracker && cp "$ROOT/tracker/index.html" site/tracker/index.html
-step python3 -I "$ROOT/tracker/build_ops.py" "$DROPS/tracker_ops" site/tracker
+step python3 -I "$ROOT/tracker/build_ops.py" "$DROPS/tracker_ops" site/tracker "$ROOT/tracker/seed"
 # Read-only key for the tracker export below; derived from a secret this job already has, so nothing new to set up.
 TRACKER_KEY="$(printf 'community-ops-tracker:%s' "${GOOGLE_SA_JSON:-}" | sha256sum | cut -c1-64)"
 case "${DEPLOY:-off}" in

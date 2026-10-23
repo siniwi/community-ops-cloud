@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Bundle the tracker changes made in Claude chat into the team site.
 
-  python build_ops.py <tracker_ops_dir> <site_tracker_dir>
+  python build_ops.py <tracker_ops_dir> <site_tracker_dir> [more op dirs...]
 
 <tracker_ops_dir> is the Drive folder tracker_ops/ as pulled by drive.py: one JSON file per change
-({"ops": [...]}, or a single op), plus screenshots. Writes <site_tracker_dir>/ops.json and copies the
+({"ops": [...]}, or a single op), plus screenshots. The extra dirs hold op files kept in this repo
+(tracker/seed/: the one-off import of Hirad's sheet). Writes <site_tracker_dir>/ops.json and copies the
 screenshots to <site_tracker_dir>/shots/. functions/api/tracker.js applies each op once (by op_id).
 
 An op is {"op_id", "type": "add"|"update", "at", "by", "entry": {...}} or {..., "id"|"n", "set": {...}};
@@ -15,10 +16,11 @@ import hashlib, json, os, shutil, sys
 IMAGES = (".png", ".jpg", ".jpeg", ".webp", ".gif")
 
 
-def main(src, dest):
+def main(dest, *srcs):
     ops, bad = [], 0
     os.makedirs(os.path.join(dest, "shots"), exist_ok=True)
-    for root, _, files in os.walk(src) if os.path.isdir(src) else []:
+    walk = [w for src in srcs if os.path.isdir(src) for w in os.walk(src)]
+    for root, _, files in walk:
         for name in sorted(files):
             p = os.path.join(root, name)
             if name.lower().endswith(IMAGES):
@@ -45,6 +47,6 @@ def main(src, dest):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[2], sys.argv[1], *sys.argv[3:])

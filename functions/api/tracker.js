@@ -7,7 +7,7 @@
 // Actions run bundles them into /tracker/ops.json; this function applies any op it has not seen yet,
 // once (tracker_ops table), so team edits made on the page are never overwritten.
 //
-//   GET  /api/tracker               -> { db, pending, entries, statuses, kinds, sources, slack }
+//   GET  /api/tracker               -> { db, pending, entries, statuses, kinds, priorities, labels, sources, jira_base, slack }
 //   GET  /api/tracker?log=<id>      -> { log: [...] } change history of one entry
 //   POST /api/tracker {action:"add", entry, by}             -> { entry }
 //   POST /api/tracker {action:"update", id, set, by}        -> { entry }
@@ -16,22 +16,29 @@
 // message, so the team can discuss it in that message's thread. Without it nothing is sent.
 // Jira: jira_key is parsed from jira_url; jira_status is reserved for the later Jira sync.
 
-export const STATUSES = ["New", "Needs ticket", "Ticketed", "In progress", "Fixed", "Won't fix", "Duplicate"];
-export const KINDS = ["Bug", "Feedback", "Feature request"];
-export const SOURCES = ["Reddit", "Steam forum", "Steam review", "Discord", "X / Twitter", "YouTube", "Email / support", "In-game", "Other"];
-const TEXT = ["kind", "title", "summary", "source", "url", "posted_at", "status", "jira_url", "jira_status", "notes", "platform", "version"];
-const LISTS = ["links", "shots", "tags"];
+// Same vocabulary as Hirad's sheet "Aimlabs 2.0 - Post Launch Feedback and Bug Reports": the done checkbox is
+// status Open/Done, "Repro?"/"Status" values are labels (several per entry), "Est. Priority" is priority.
+export const STATUSES = ["Open", "Done"];
+export const KINDS = ["Bug", "Feedback"];
+export const PRIORITIES = ["6 - Critical", "5 - Very High", "4 - High", "3 - Medium", "2 - Low", "1 - Very Low"];
+export const LABELS = ["Needs repro", "Reproduceable", "No Repro", "Needs testing", "Needs Ticket", "Known Issue",
+  "Single report", "Multiple reports", "Video provided", "Unsure", "Fixed"];
+export const SOURCES = ["Discord", "Reddit", "Steam forum", "Steam review", "CN community", "Support", "Slack", "DM", "Other"];
+// Jira site for ORB-1234 style keys (link = JIRA_BASE/browse/KEY). Empty = show keys without a link.
+const JIRA_BASE = "";
+const TEXT = ["kind", "priority", "title", "summary", "source", "where", "url", "posted_at", "status", "jira", "jira_url", "jira_status", "notes"];
+const LISTS = ["links", "shots", "tags"]; // tags = labels
 const EDITABLE = new Set([...TEXT, ...LISTS]);
 const COLS = ["id", "n", ...TEXT, "jira_key", ...LISTS, "extra", "added_at", "added_by", "updated_at", "updated_by", "slack"];
+const qc = (c) => `"${c}"`; // quoted: "where" is an SQL keyword
+const TEXT_SQL = TEXT.map((c) => `${qc(c)} TEXT`).join(", ");
 
 let ready = false;
 async function init(db) {
   if (ready) return;
   await db.batch([
-    db.prepare(`CREATE TABLE IF NOT EXISTS tracker (id TEXT PRIMARY KEY, n INTEGER, kind TEXT, title TEXT, summary TEXT,
-      source TEXT, url TEXT, posted_at TEXT, status TEXT, jira_url TEXT, jira_status TEXT, notes TEXT, platform TEXT,
-      version TEXT, jira_key TEXT, links TEXT, shots TEXT, tags TEXT, extra TEXT, added_at TEXT, added_by TEXT,
-      updated_at TEXT, updated_by TEXT, slack TEXT)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS tracker (id TEXT PRIMARY KEY, n INTEGER, ${TEXT_SQL}, jira_key TEXT, links TEXT,
+      shots TEXT, tags TEXT, extra TEXT, added_at TEXT, added_by TEXT, updated_at TEXT, updated_by TEXT, slack TEXT)`),
     db.prepare("CREATE TABLE IF NOT EXISTS tracker_ops (op_id TEXT PRIMARY KEY, at TEXT)"),
     db.prepare("CREATE TABLE IF NOT EXISTS tracker_log (at TEXT, id TEXT, by TEXT, field TEXT, old TEXT, new TEXT)"),
   ]);
@@ -39,12 +46,13 @@ async function init(db) {
 }
 
 const clip = (v, n) => String(v ?? "").trim().slice(0, n);
-const jiraKey = (u) => (String(u || "").match(/\b([A-Z][A-Z0-9]+-\d+)\b/) || [])[1] || "";
+const jiraKey = (...xs) => xs.map((u) => (String(u || "").match(/\b([A-Z][A-Z0-9]+-\d+)\b/) || [])[1]).find(Boolean) || "";
 const newId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 function clean(field, v) {
   if (LISTS.includes(field)) return (Array.isArray(v) ? v : []).map((x) => clip(x, 1000)).filter(Boolean).slice(0, 50);
-  if (field === "status") return STATUSES.includes(v) ? v : "New";
+  if (field === "status") return STATUSES.includes(v) ? v : "Open";
   if (field === "kind") return KINDS.includes(v) ? v : "Feedback";
+  if (field === "priority") return PRIORITIES.includes(v) ? v : "";
   return clip(v, field === "summary" || field === "notes" ? 8000 : 1000);
 }
 function toRow(e) {
@@ -61,8 +69,8 @@ function fresh(input, by, at) {
   const e = { id: clip(input.id, 64) || newId(), added_at: clip(input.added_at, 40) || at, added_by: clip(input.added_by || by, 80),
     updated_at: clip(input.updated_at, 40) || at, updated_by: clip(input.updated_by || by, 80), slack: "", extra: input.extra && typeof input.extra === "object" ? input.extra : {} };
   for (const f of EDITABLE) e[f] = clean(f, input[f]);
-  if (!input.status) e.status = "New";
-  e.jira_key = jiraKey(e.jira_url);
+  if (!input.status) e.status = "Open";
+  e.jira_key = jiraKey(e.jira, e.jira_url);
   return e;
 }
 
@@ -82,24 +90,27 @@ async function update(db, id, set, by, at) {
     cur[f] = nv;
   }
   if (!changes.length) return cur;
-  cur.jira_key = jiraKey(cur.jira_url);
+  cur.jira_key = jiraKey(cur.jira, cur.jira_url);
   cur.updated_at = at; cur.updated_by = clip(by, 80);
   const r = toRow(cur);
   const cols = [...changes.map((c) => c[0]), "jira_key", "updated_at", "updated_by"];
   const uniq = [...new Set(cols)];
   await db.batch([
-    db.prepare(`UPDATE tracker SET ${uniq.map((c) => `${c} = ?`).join(", ")} WHERE id = ?`).bind(...uniq.map((c) => r[c]), id),
+    db.prepare(`UPDATE tracker SET ${uniq.map((c) => `${qc(c)} = ?`).join(", ")} WHERE id = ?`).bind(...uniq.map((c) => r[c]), id),
     ...changes.map(([f, o, n]) => db.prepare("INSERT INTO tracker_log (at, id, by, field, old, new) VALUES (?, ?, ?, ?, ?, ?)")
       .bind(at, id, cur.updated_by, f, JSON.stringify(o), JSON.stringify(n))),
   ]);
   return cur;
 }
 
+const jiraLink = (e) => e.jira_url || (JIRA_BASE && e.jira_key ? `${JIRA_BASE}/browse/${e.jira_key}` : "");
 async function notifySlack(env, e, origin) {
   if (!env.SLACK_WEBHOOK_URL) return "";
-  const icon = { Bug: ":beetle:", Feedback: ":speech_balloon:", "Feature request": ":sparkles:" }[e.kind] || ":memo:";
+  const icon = { Bug: ":beetle:", Feedback: ":speech_balloon:" }[e.kind] || ":memo:";
   const lines = [`${icon} *New ${e.kind.toLowerCase()} #${e.n || ""}:* ${e.url ? `<${e.url}|${e.title}>` : e.title}`];
-  const meta = [e.source, e.posted_at && `posted ${e.posted_at.slice(0, 10)}`, e.status, e.jira_key && `<${e.jira_url}|${e.jira_key}>`].filter(Boolean);
+  const jl = jiraLink(e);
+  const meta = [e.priority, e.source, e.posted_at && `posted ${e.posted_at.slice(0, 10)}`, (e.tags || []).join(", "),
+    e.jira_key && (jl ? `<${jl}|${e.jira_key}>` : e.jira_key)].filter(Boolean);
   if (meta.length) lines.push(meta.join(" · "));
   if (e.summary) lines.push(`>${e.summary.slice(0, 600).replace(/\n/g, "\n>")}`);
   lines.push(`<${origin}/tracker/#${e.id}|Open in the tracker> · added by ${e.added_by || "someone"}`);
@@ -121,7 +132,7 @@ const QUERY_BUDGET = 36;
 function insertStmt(db, e) {
   const r = toRow(e);
   const cols = COLS.filter((c) => c !== "n");
-  return db.prepare(`INSERT INTO tracker (n, ${cols.join(", ")}) VALUES ((SELECT COALESCE(MAX(n), 0) + 1 FROM tracker), ${cols.map(() => "?").join(", ")})
+  return db.prepare(`INSERT INTO tracker (n, ${cols.map(qc).join(", ")}) VALUES ((SELECT COALESCE(MAX(n), 0) + 1 FROM tracker), ${cols.map(() => "?").join(", ")})
     ON CONFLICT(id) DO NOTHING`).bind(...cols.map((c) => r[c]));
 }
 async function applyOps(ctx, db, bundle) {
@@ -164,14 +175,15 @@ function replay(bundle) {
     if (op.type === "add" && op.entry && !byId.has(op.entry.id)) { const e = fresh(op.entry, op.by || "Claude (chat)", op.at || ""); e.n = ++n; byId.set(e.id, e); }
     else if (op.type === "update") {
       const e = op.id ? byId.get(op.id) : [...byId.values()].find((x) => x.n === +op.n);
-      if (e) for (const [f, v] of Object.entries(op.set || {})) if (EDITABLE.has(f)) { e[f] = clean(f, v); e.jira_key = jiraKey(e.jira_url); }
+      if (e) for (const [f, v] of Object.entries(op.set || {})) if (EDITABLE.has(f)) { e[f] = clean(f, v); e.jira_key = jiraKey(e.jira, e.jira_url); }
     }
   }
   return [...byId.values()];
 }
 
 const json = (o, status = 200) => Response.json(o, { status, headers: { "cache-control": "no-store" } });
-const meta = (env) => ({ statuses: STATUSES, kinds: KINDS, sources: SOURCES, slack: env.SLACK_WEBHOOK_URL ? "on" : "off" });
+const meta = (env) => ({ statuses: STATUSES, kinds: KINDS, priorities: PRIORITIES, labels: LABELS, sources: SOURCES, jira_base: JIRA_BASE,
+  slack: env.SLACK_WEBHOOK_URL ? "on" : "off" });
 
 export async function onRequestGet(ctx) {
   const { env, request } = ctx;
