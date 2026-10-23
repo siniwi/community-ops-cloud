@@ -27,7 +27,11 @@ export async function onRequestGet(ctx) {
     headers.delete("content-length"); headers.delete("etag");
     headers.set("cache-control", "no-cache");
     headers.set("x-inbox-data", "live " + (live.generated_at || ""));
-    return new Response(html.slice(0, a) + MARK + blob + html.slice(b), { status: 200, headers });
+    const t = String(live.generated_at || "").slice(11, 16);
+    let out = html.slice(0, a) + MARK + blob + html.slice(b);
+    const end = out.lastIndexOf("</body>");
+    if (t && end > b) out = out.slice(0, end) + `<div style="text-align:center;font-size:12px;opacity:.6;margin:16px 0">Live list, updated ${t} (Amsterdam time)</div>\n` + out.slice(end);
+    return new Response(out, { status: 200, headers });
   } catch (e) {
     return html === null ? res : new Response(html, res);
   }
