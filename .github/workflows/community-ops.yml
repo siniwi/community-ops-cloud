@@ -8,6 +8,9 @@ on:
       job:
         description: "hourly or daily"
         default: daily
+      deploy:
+        description: "override DEPLOY for this run only (preview to test on the cloud-test link); empty = repo variable"
+        default: ""
 concurrency:
   group: community-ops
   cancel-in-progress: false
@@ -21,7 +24,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       PUSH: ${{ vars.PUSH || '0' }}
-      DEPLOY: ${{ vars.DEPLOY || 'off' }}
+      DEPLOY: ${{ github.event.inputs.deploy || vars.DEPLOY || 'off' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

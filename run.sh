@@ -54,6 +54,8 @@ case "${DEPLOY:-off}" in
   off) echo "DEPLOY is off: site built, not published" ;;
   preview|production)
     BRANCH=main; [ "$DEPLOY" = "preview" ] && BRANCH=cloud-test
+    # Live team Inbox: swaps in the Worker's 10-minute item list (no-op until TEAM_KEY is set on Pages).
+    mkdir -p functions/inbox && cp "$ROOT/functions/inbox/[[path]].js" functions/inbox/
     # Same safety checks as refresh_snapshot.py: never publish without the password gate.
     [ -e site/_worker.js ] && { echo "::error::site/_worker.js would bypass the password gate"; exit 1; }
     [ -f functions/_middleware.js ] || { echo "::error::functions/_middleware.js (the password gate) is missing"; exit 1; }
