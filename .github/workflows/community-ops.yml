@@ -1,8 +1,7 @@
 name: Community Ops
 on:
-  schedule:
-    - cron: "7 * * * *"    # hourly: Reddit history, Steam summary, player counts, team site
-    - cron: "15 6 * * *"   # daily 06:15 UTC (08:15 CEST): full Trends pull
+  # No GitHub schedule: it skipped most hourly runs. The cloud Worker (community-ops-pull) starts this
+  # workflow itself, hourly at :06 UTC and the daily full pull at 06:14 UTC (secret GH_TOKEN there).
   workflow_dispatch:
     inputs:
       job:
