@@ -25,7 +25,7 @@ export const LABELS = ["Needs repro", "Reproduceable", "No Repro", "Needs testin
   "Single report", "Multiple reports", "Video provided", "Unsure", "Fixed"];
 export const SOURCES = ["Discord", "Reddit", "Steam forum", "Steam review", "CN community", "Support", "Slack", "DM", "Other"];
 // Jira site for ORB-1234 style keys (link = JIRA_BASE/browse/KEY). Empty = show keys without a link.
-const JIRA_BASE = "";
+const JIRA_BASE = "https://anthic.atlassian.net";
 const TEXT = ["kind", "priority", "title", "summary", "source", "where", "url", "posted_at", "status", "jira", "jira_url", "jira_status", "notes"];
 const LISTS = ["links", "shots", "tags"]; // tags = labels
 const EDITABLE = new Set([...TEXT, ...LISTS]);
