@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@500;600;700&family=Play:wght@400;700&display=swap">
 <style>
 /* Same visual language as the team Inbox and Trends pages: night-blue tonal surfaces, one teal accent, Tomorrow for headings and single figures, Play for everything else. Dark only. */
-:root{--teal:#47d8d7;--teal-ink:#5fe1e0;--teal-wash:#0b2a33;--on-teal:#083d3d;--up:#5fd197;--down:#ff8f7e;
+:root{--teal:#47d8d7;--teal-ink:#5fe1e0;--teal-wash:#0b2a33;--on-teal:#083d3d;--up:#5fd197;--down:#ff8f7e;--warn:#f2c14e;
   --ground:#070b15;--tray:#0a0f1d;--surface:#0d1322;--surface-2:#111a2d;--fill:#172036;--fill-hover:#1f2a45;--line:#26324f;--line-strong:#5a6a94;--ink:#eef2fb;--muted:#9ba6c2;
   --font-sans:"Play",ui-sans-serif,system-ui,sans-serif;--font-display:"Tomorrow",ui-sans-serif,system-ui,sans-serif;
   --shadow-control:0 1px 2px rgb(0 0 0/.4),0 2px 6px -2px rgb(0 0 0/.6),inset 0 0 0 1px var(--line-strong);--ease:cubic-bezier(.23,1,.32,1);color-scheme:dark}
@@ -46,7 +46,7 @@ h2{font:700 17px/1.2 var(--font-display);margin:0}
 .banner .ic{color:var(--down);margin-top:2px}
 .navrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
 .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--tray);border-radius:15px;padding:4px;min-width:460px}
-.tab{height:44px;padding:0 14px;border:0;border-radius:11px;background:transparent;color:var(--muted);font:14px var(--font-sans);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;transition:background-color 380ms var(--ease),color 150ms ease,scale 150ms var(--ease)}
+.tab{height:44px;min-width:0;padding:0 14px;border:0;border-radius:11px;background:transparent;color:var(--muted);font:14px var(--font-sans);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;transition:background-color 380ms var(--ease),color 150ms ease,scale 150ms var(--ease)}
 .tab[aria-selected="true"]{background:var(--fill-hover);box-shadow:var(--shadow-control);color:var(--ink);font-weight:700}
 .tab:active{scale:.97}
 .tab .n{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}
@@ -120,6 +120,65 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 .frow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .frow .lbl{min-width:52px}
 .ptxt.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+/* next-step board */
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px}
+.stage{--st:var(--line-strong);background:var(--surface-2);border:0;border-radius:16px;padding:12px 14px 12px;display:flex;flex-direction:column;gap:3px;min-width:0;color:inherit;text-align:left;font:inherit;cursor:pointer;box-shadow:inset 0 3px 0 var(--st);transition:background-color 150ms ease,scale 150ms var(--ease)}
+.stage:active{scale:.98}
+.stage[aria-pressed="true"]{background:var(--fill-hover);box-shadow:inset 0 3px 0 var(--st),inset 0 0 0 1px var(--st)}
+.stage .lbl{color:var(--ink)}
+.stage .sub{font-size:12px;line-height:1.3}
+.st-triage{--st:var(--teal)}.st-needs-repro{--st:var(--warn)}.st-needs-ticket{--st:var(--down)}.st-with-dev{--st:#8ea2ff}
+.st-fixed-tell-players{--st:var(--up)}.st-backlog{--st:#7d89a8}.st-closed{--st:var(--line)}
+/* grouped one-line rows */
+.group{display:grid;gap:8px}
+.ghead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:0 2px}
+.ghead .n{font:700 15px var(--font-display);color:var(--teal-ink);font-variant-numeric:tabular-nums}
+.ghint{font-size:13px;color:var(--muted)}
+.rows{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.item{border-top:1px solid var(--line);scroll-margin-top:20px}
+.item:first-child{border-top:0}
+.item.hl{box-shadow:inset 3px 0 0 var(--teal-ink)}
+.line{width:100%;display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 14px;border:0;background:transparent;color:var(--ink);font:15px var(--font-sans);text-align:left;cursor:pointer}
+.item.is-open .line{background:var(--surface-2)}
+.pdot{flex:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font:700 13px var(--font-display);background:var(--fill);color:var(--muted)}
+.pdot.p6{background:var(--down);color:#3b0d06}.pdot.p5{background:color-mix(in srgb,var(--down) 30%,var(--surface));color:var(--down)}
+.pdot.p4{background:color-mix(in srgb,var(--warn) 22%,var(--surface));color:var(--warn)}.pdot.p3{color:var(--ink)}
+.line .num{flex:none;min-width:38px}
+.ktag{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:2px 6px;border-radius:5px;background:var(--fill);color:var(--muted)}
+.ktag.bug{background:color-mix(in srgb,var(--down) 16%,var(--surface));color:var(--down)}
+.ktag.fb{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.ktag.req{background:var(--teal-wash);color:var(--teal-ink)}
+.kic{display:inline-flex}.kic.bug{color:var(--down)}.kic.fb{color:var(--warn)}.kic.req{color:var(--teal-ink)}
+.ltitle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.lmeta{flex:none;display:flex;align-items:center;gap:6px}
+.tag.area{font-weight:400}
+.tag.plat{background:var(--surface-2);font-weight:400}
+.age{min-width:42px;text-align:right;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.detail{padding:12px 16px 16px 48px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2);border-top:1px solid var(--line)}
+.detail .notes,.detail .log{background:var(--surface)}
+.open-src{min-height:32px;padding:0;align-self:flex-start}
+.qlink.inl{min-height:0;padding:0;display:inline}
+.moveto{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.moveto .chipbtn{height:30px;font-size:13px}
+.moveto .chipbtn[aria-pressed="true"]{color:var(--teal-ink);box-shadow:inset 0 0 0 1px var(--teal-ink)}
+.merge{display:inline-flex;align-items:center;gap:4px}
+.merge input{width:70px;height:36px;border-radius:10px;border:0;box-shadow:inset 0 0 0 1px var(--line-strong);background:var(--surface);color:var(--ink);padding:0 10px;font:14px var(--font-sans)}
+.empty.sm{border:0;border-radius:0;padding:16px;background:transparent}
+.group > .btn.sm{justify-self:start}
+#more-filters{justify-self:start;margin-top:-10px}
+@media (max-width:860px){
+  .stages{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stage .sub{display:none}
+  .line{flex-wrap:wrap;gap:6px 8px;padding:10px 12px}
+  .ltitle{flex-basis:100%;order:5;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .lmeta{margin-left:auto}
+  .lmeta .tag.area{display:none}
+  #areas{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:4px;scrollbar-width:none}
+  #areas .chipbtn{flex:none;white-space:nowrap}
+  .stages{gap:8px}.stage{padding:10px 12px}.stage .big{font-size:20px}
+  .detail{padding:12px}
+  .foot .acts{margin-left:0}
+}
 [hidden]{display:none!important}
 @media (hover:hover) and (pointer:fine){
   .tab:not([aria-selected="true"]):hover{color:var(--ink)}
@@ -131,7 +190,8 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 @media (max-width:860px){
   body{padding:16px 16px 40px}.wrap{gap:16px}
   .hud{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .tabs{min-width:0;width:100%}.tab{padding:0 6px}
+  .tabs{min-width:0;width:100%}.tab{padding:0 6px;gap:5px}
+  .tab .tl{display:none}
   .big{font-size:24px}
   .row2{grid-template-columns:1fr}
   .hright{justify-content:flex-start}
@@ -143,10 +203,11 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
+
 <body>
 <div class="wrap">
   <header>
-    <div class="brand"><div class="mark"><span data-ic="wrench" data-s="22"></span></div><div><h1>Feedback tracker</h1><div class="bsub">Aimlabs 2.0 player bugs and feedback, with their Jira tickets</div></div></div>
+    <div class="brand"><div class="mark"><span data-ic="wrench" data-s="22"></span></div><div><h1>Feedback tracker</h1><div class="bsub">Player bugs, feedback and requests, with their Jira tickets</div></div></div>
     <div class="hright">
       <span class="mode"><span class="pulse" id="mode-dot"></span><span id="mode">Loading…</span></span>
       <a class="qlink" href="/trends/">Trends</a><a class="qlink" href="/inbox/">Inbox</a><span class="qlink here" aria-current="page">Tracker</span>
@@ -155,12 +216,7 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 
   <div class="banner" id="banner" hidden></div>
 
-  <div class="hud">
-    <button class="cell" data-q="bugs"><span class="lbl">Open bugs</span><span class="big neg" id="h-bugs">–</span><span class="sub" id="h-bugs-sub">not done yet</span></button>
-    <button class="cell" data-q="repro"><span class="lbl">Needs repro</span><span class="big cyan" id="h-repro">–</span><span class="sub">open, not reproduced yet</span></button>
-    <button class="cell" data-q="noticket"><span class="lbl">No Jira ticket</span><span class="big" id="h-noticket">–</span><span class="sub">open, high or above</span></button>
-    <button class="cell" data-q="done"><span class="lbl">Done, 30 days</span><span class="big pos" id="h-done">–</span><span class="sub">marked done lately</span></button>
-  </div>
+  <div class="stages" id="stages" role="group" aria-label="Next step"></div>
 
   <div class="navrow">
     <div class="tabs" role="tablist" id="kinds"></div>
@@ -172,35 +228,34 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 
   <div class="tools">
     <label class="search"><span data-ic="magnifying-glass"></span><input id="q" type="search" placeholder="Search text, notes, ORB keys, #numbers" aria-label="Search"></label>
-    <div class="seg" id="state" role="group" aria-label="Open or done">
-      <button class="chipbtn" data-state="Open" aria-pressed="true">Open</button>
-      <button class="chipbtn" data-state="Done" aria-pressed="false">Done</button>
-      <button class="chipbtn" data-state="" aria-pressed="false">All</button>
+    <div class="seg" id="sort" role="group" aria-label="Sort">
+      <button class="chipbtn" data-sort="priority" aria-pressed="true">Priority</button>
+      <button class="chipbtn" data-sort="reports" aria-pressed="false">Reports</button>
+      <button class="chipbtn" data-sort="posted" aria-pressed="false">Newest</button>
+      <button class="chipbtn" data-sort="changed" aria-pressed="false">Changed</button>
     </div>
   </div>
-  <div class="frow"><span class="lbl">Sort</span><div class="seg" id="sort" role="group" aria-label="Sort">
-      <button class="chipbtn" data-sort="priority" aria-pressed="true">Priority</button>
-      <button class="chipbtn" data-sort="posted" aria-pressed="false">Newest</button>
-      <button class="chipbtn" data-sort="reports" aria-pressed="false">Most reports</button>
-      <button class="chipbtn" data-sort="changed" aria-pressed="false">Recently changed</button>
-  </div></div>
-  <div class="frow"><span class="lbl">Labels</span><div class="filters" id="labels" role="group" aria-label="Labels"></div></div>
-  <div class="frow"><span class="lbl">Source</span><div class="filters" id="sources" role="group" aria-label="Source"></div></div>
+  <div class="frow"><span class="lbl">Area</span><div class="filters" id="areas" role="group" aria-label="Area"></div></div>
+  <button class="btn ghost sm" id="more-filters" aria-expanded="false">More filters</button>
+  <div id="extra-filters" hidden>
+    <div class="frow"><span class="lbl">Labels</span><div class="filters" id="labels" role="group" aria-label="Labels"></div></div>
+    <div class="frow" style="margin-top:10px"><span class="lbl">Source</span><div class="filters" id="sources" role="group" aria-label="Source"></div></div>
+    <div class="frow" style="margin-top:10px"><span class="lbl">Platform</span><div class="filters" id="platforms" role="group" aria-label="Platform"></div></div>
+  </div>
 
-  <div class="list" id="list"><div class="empty">Loading the tracker…</div></div>
-  <button class="btn" id="more" hidden>Show more</button>
+  <div id="list"><div class="empty">Loading the tracker…</div></div>
 </div>
 
 <dialog id="sheet">
   <form class="sheet" id="form" method="dialog">
     <div class="sheethead"><h2 id="sheet-title">Add entry</h2><button class="btn ghost" type="button" id="close" aria-label="Close"><span data-ic="x"></span></button></div>
-    <div class="row2">
-      <div class="field"><span class="lbl">Type</span><div class="seg" id="f-kind" role="group"></div></div>
-      <div class="field"><span class="lbl">State</span><div class="seg" id="f-status" role="group"></div></div>
-    </div>
+    <div class="field"><span class="lbl">Type</span><div class="seg" id="f-kind" role="group"></div></div>
+    <div class="field"><span class="lbl">Next step</span><div class="filters" id="f-status" role="group"></div></div>
     <div class="field"><span class="lbl">Priority</span><div class="filters" id="f-priority" role="group"></div></div>
     <label class="field"><span class="lbl">What players report</span><textarea name="text" required maxlength="8000" placeholder="e.g. Creating any weapon crashes the game"></textarea><span class="hint">The first sentence becomes the title.</span></label>
+    <div class="field"><span class="lbl">Area</span><div class="filters" id="f-area" role="group"></div><span class="hint">Leave empty to let the tracker guess it from the text.</span></div>
     <div class="field"><span class="lbl">Labels</span><div class="filters" id="f-labels" role="group"></div></div>
+    <div class="field"><span class="lbl">Platforms</span><div class="filters" id="f-platforms" role="group"></div></div>
     <div class="row2">
       <label class="field"><span class="lbl">Link to the feedback</span><input name="url" type="url" placeholder="https://"></label>
       <label class="field"><span class="lbl">Date posted</span><input name="posted_at" type="date"></label>
@@ -219,8 +274,30 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
-const ICON = {"chart-line-up":"<path d=\"M236,208a12,12,0,0,1-12,12H32a12,12,0,0,1-12-12V48a12,12,0,0,1,24,0v99l43.51-43.52a12,12,0,0,1,17,0L128,127l43-43H160a12,12,0,0,1,0-24h40a12,12,0,0,1,12,12v40a12,12,0,0,1-24,0V101l-51.51,51.52a12,12,0,0,1-17,0L96,129,44,181v15H224A12,12,0,0,1,236,208Z\"/>","magnifying-glass":"<path d=\"M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z\"/>","warning":"<path d=\"M240.26,186.1,152.81,34.23h0a28.74,28.74,0,0,0-49.62,0L15.74,186.1a27.45,27.45,0,0,0,0,27.71A28.31,28.31,0,0,0,40.55,228h174.9a28.31,28.31,0,0,0,24.79-14.19A27.45,27.45,0,0,0,240.26,186.1Zm-20.8,15.7a4.46,4.46,0,0,1-4,2.2H40.55a4.46,4.46,0,0,1-4-2.2,3.56,3.56,0,0,1,0-3.73L124,46.2a4.77,4.77,0,0,1,8,0l87.44,151.87A3.56,3.56,0,0,1,219.46,201.8ZM116,136V104a12,12,0,0,1,24,0v32a12,12,0,0,1-24,0Zm28,40a16,16,0,1,1-16-16A16,16,0,0,1,144,176Z\"/>","arrow-square-out":"<path d=\"M228,104a12,12,0,0,1-24,0V69l-59.51,59.51a12,12,0,0,1-17-17L187,52H152a12,12,0,0,1,0-24h64a12,12,0,0,1,12,12Zm-44,24a12,12,0,0,0-12,12v64H52V84h64a12,12,0,0,0,0-24H48A20,20,0,0,0,28,80V208a20,20,0,0,0,20,20H176a20,20,0,0,0,20-20V140A12,12,0,0,0,184,128Z\"/>","x":"<path d=\"M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z\"/>","check":"<path d=\"M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z\"/>","chat-circle-text":"<path d=\"M172,108a12,12,0,0,1-12,12H96a12,12,0,0,1,0-24h64A12,12,0,0,1,172,108Zm-12,28H96a12,12,0,0,0,0,24h64a12,12,0,0,0,0-24Zm76-8A108,108,0,0,1,78.77,224.15L46.34,235A20,20,0,0,1,21,209.66l10.81-32.43A108,108,0,1,1,236,128Zm-24,0A84,84,0,1,0,55.27,170.06a12,12,0,0,1,1,9.81l-9.93,29.79,29.79-9.93a12.1,12.1,0,0,1,3.8-.62,12,12,0,0,1,6,1.62A84,84,0,0,0,212,128Z\"/>","steam-logo":"<path d=\"M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm50.16,122.22a40,40,0,1,0-57.25-55.34L92.57,123.6,55.18,86.21a83.55,83.55,0,1,1-9.39,24.55l32.76,32.76a32,32,0,0,0,49.51,37.41ZM117,131.27A40.26,40.26,0,0,0,132.73,147L113.3,162l-.25.2a7.93,7.93,0,0,1-5,1.79,8,8,0,0,1-8-8,7.93,7.93,0,0,1,1.79-5.05l.2-.25ZM152,128a16,16,0,1,1,16-16A16,16,0,0,1,152,128Z\"/>","reddit-logo":"<path d=\"M252,104a36,36,0,0,0-57.4-28.93,145.56,145.56,0,0,0-52.54-14.45l3.8-22.81,15.67,2.61a24,24,0,1,0,3.95-23.67L138,12.16A12,12,0,0,0,124.16,22l-6.38,38.31C97.48,61.62,78,66.7,61.4,75.07a36,36,0,0,0-47.52,53.68A62.87,62.87,0,0,0,12,144c0,23.29,12.65,44.87,35.63,60.78C69.26,219.75,97.8,228,128,228s58.74-8.25,80.37-23.22C231.35,188.87,244,167.29,244,144a62.87,62.87,0,0,0-1.88-15.25A36.16,36.16,0,0,0,252,104Zm-29.91,10.34a12,12,0,0,0-5,15A39.61,39.61,0,0,1,220,144c0,15.18-9,29.75-25.29,41.05C177.05,197.27,153.36,204,128,204s-49-6.73-66.71-18.95C45,173.75,36,159.18,36,144a39.74,39.74,0,0,1,2.84-14.64,12,12,0,0,0-4.93-15A12,12,0,1,1,49.71,97a12,12,0,0,0,15.94,3.18l.22-.13C82.94,89.68,105,84,128,84H128c23,0,45,5.69,62.09,16l.22.13A12,12,0,0,0,206.29,97,11.88,11.88,0,0,1,216,92a12,12,0,0,1,6.09,22.34ZM88,148a20,20,0,1,1,20-20A20,20,0,0,1,88,148Zm100-20a20,20,0,1,1-20-20A20,20,0,0,1,188,128Zm-20.52,40.52a12,12,0,0,1-8,15,111.88,111.88,0,0,1-63,0,12,12,0,0,1,7-23,88.12,88.12,0,0,0,49,0A12,12,0,0,1,167.48,168.52Z\"/>","clock":"<path d=\"M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm0,192a84,84,0,1,1,84-84A84.09,84.09,0,0,1,128,212Zm68-84a12,12,0,0,1-12,12H128a12,12,0,0,1-12-12V72a12,12,0,0,1,24,0v44h44A12,12,0,0,1,196,128Z\"/>","download-simple":"<path d=\"M228,144v64a12,12,0,0,1-12,12H40a12,12,0,0,1-12-12V144a12,12,0,0,1,24,0v52H204V144a12,12,0,0,1,24,0Zm-108.49,8.49a12,12,0,0,0,17,0l40-40a12,12,0,0,0-17-17L140,115V32a12,12,0,0,0-24,0v83L96.49,95.51a12,12,0,0,0-17,17Z\"/>","tag":"<path d=\"M246.15,133.18,146.83,33.86A19.85,19.85,0,0,0,132.69,28H40A12,12,0,0,0,28,40v92.69a19.85,19.85,0,0,0,5.86,14.14l99.32,99.32a20,20,0,0,0,28.28,0l84.69-84.69A20,20,0,0,0,246.15,133.18Zm-98.83,93.17L52,131V52h79l95.32,95.32ZM104,88A16,16,0,1,1,88,72,16,16,0,0,1,104,88Z\"/>","arrows-clockwise":"<path d=\"M228,48V96a12,12,0,0,1-12,12H168a12,12,0,0,1,0-24h19l-7.8-7.8a75.55,75.55,0,0,0-53.32-22.26h-.43A75.49,75.49,0,0,0,72.39,75.57,12,12,0,1,1,55.61,58.41a99.38,99.38,0,0,1,69.87-28.47H126A99.42,99.42,0,0,1,196.2,59.23L204,67V48a12,12,0,0,1,24,0ZM183.61,180.43a75.49,75.49,0,0,1-53.09,21.63h-.43A75.55,75.55,0,0,1,76.77,179.8L69,172H88a12,12,0,0,0,0-24H40a12,12,0,0,0-12,12v48a12,12,0,0,0,24,0V189l7.8,7.8A99.42,99.42,0,0,0,130,226.06h.56a99.38,99.38,0,0,0,69.87-28.47,12,12,0,0,0-16.78-17.16Z\"/>","wrench":"<path d=\"M230.47,67.5a12,12,0,0,0-19.26-4.32L172.43,99l-12.68-2.72L157,83.57l35.79-38.78a12,12,0,0,0-4.32-19.26A76.07,76.07,0,0,0,88.41,121.64L30.92,174.18a4.68,4.68,0,0,0-.39.38,36,36,0,0,0,50.91,50.91l.38-.39,52.54-57.49A76.05,76.05,0,0,0,230.47,67.5ZM160,148a51.5,51.5,0,0,1-23.35-5.52,12,12,0,0,0-14.26,2.62L64.31,208.66a12,12,0,0,1-17-17l63.55-58.07a12,12,0,0,0,2.62-14.26A51.5,51.5,0,0,1,108,96a52.06,52.06,0,0,1,52-52h.89L135.17,71.87a12,12,0,0,0-2.91,10.65l5.66,26.35a12,12,0,0,0,9.21,9.21l26.35,5.66a12,12,0,0,0,10.65-2.91L212,95.12c0,.3,0,.59,0,.89A52.06,52.06,0,0,1,160,148Z\"/>","tray":"<path d=\"M208,28H48A20,20,0,0,0,28,48V208a20,20,0,0,0,20,20H208a20,20,0,0,0,20-20V48A20,20,0,0,0,208,28Zm-4,24v92H179.31a19.86,19.86,0,0,0-14.14,5.86L147,168H109L90.83,149.86A19.86,19.86,0,0,0,76.69,144H52V52ZM52,204V168H75l18.14,18.14A19.86,19.86,0,0,0,107.31,192h41.38a19.86,19.86,0,0,0,14.14-5.86L181,168h23v36Z\"/>","sparkle":"<path d=\"M199,125.31l-49.88-18.39L130.69,57a19.92,19.92,0,0,0-37.38,0L74.92,106.92,25,125.31a19.92,19.92,0,0,0,0,37.38l49.88,18.39L93.31,231a19.92,19.92,0,0,0,37.38,0l18.39-49.88L199,162.69a19.92,19.92,0,0,0,0-37.38Zm-63.38,35.16a12,12,0,0,0-7.11,7.11L112,212.28l-16.47-44.7a12,12,0,0,0-7.11-7.11L43.72,144l44.7-16.47a12,12,0,0,0,7.11-7.11L112,75.72l16.47,44.7a12,12,0,0,0,7.11,7.11L180.28,144ZM140,40a12,12,0,0,1,12-12h12V16a12,12,0,0,1,24,0V28h12a12,12,0,0,1,0,24H188V64a12,12,0,0,1-24,0V52H152A12,12,0,0,1,140,40ZM252,88a12,12,0,0,1-12,12h-4v4a12,12,0,0,1-24,0v-4h-4a12,12,0,0,1,0-24h4V72a12,12,0,0,1,24,0v4h4A12,12,0,0,1,252,88Z\"/>","plus":"<path d=\"M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z\"/>"};
-const PAGE = 60;
+const ICON = {"chart-line-up":"<path d=\"M236,208a12,12,0,0,1-12,12H32a12,12,0,0,1-12-12V48a12,12,0,0,1,24,0v99l43.51-43.52a12,12,0,0,1,17,0L128,127l43-43H160a12,12,0,0,1,0-24h40a12,12,0,0,1,12,12v40a12,12,0,0,1-24,0V101l-51.51,51.52a12,12,0,0,1-17,0L96,129,44,181v15H224A12,12,0,0,1,236,208Z\"/>","magnifying-glass":"<path d=\"M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z\"/>","warning":"<path d=\"M240.26,186.1,152.81,34.23h0a28.74,28.74,0,0,0-49.62,0L15.74,186.1a27.45,27.45,0,0,0,0,27.71A28.31,28.31,0,0,0,40.55,228h174.9a28.31,28.31,0,0,0,24.79-14.19A27.45,27.45,0,0,0,240.26,186.1Zm-20.8,15.7a4.46,4.46,0,0,1-4,2.2H40.55a4.46,4.46,0,0,1-4-2.2,3.56,3.56,0,0,1,0-3.73L124,46.2a4.77,4.77,0,0,1,8,0l87.44,151.87A3.56,3.56,0,0,1,219.46,201.8ZM116,136V104a12,12,0,0,1,24,0v32a12,12,0,0,1-24,0Zm28,40a16,16,0,1,1-16-16A16,16,0,0,1,144,176Z\"/>","arrow-square-out":"<path d=\"M228,104a12,12,0,0,1-24,0V69l-59.51,59.51a12,12,0,0,1-17-17L187,52H152a12,12,0,0,1,0-24h64a12,12,0,0,1,12,12Zm-44,24a12,12,0,0,0-12,12v64H52V84h64a12,12,0,0,0,0-24H48A20,20,0,0,0,28,80V208a20,20,0,0,0,20,20H176a20,20,0,0,0,20-20V140A12,12,0,0,0,184,128Z\"/>","x":"<path d=\"M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z\"/>","check":"<path d=\"M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z\"/>","chat-circle-text":"<path d=\"M172,108a12,12,0,0,1-12,12H96a12,12,0,0,1,0-24h64A12,12,0,0,1,172,108Zm-12,28H96a12,12,0,0,0,0,24h64a12,12,0,0,0,0-24Zm76-8A108,108,0,0,1,78.77,224.15L46.34,235A20,20,0,0,1,21,209.66l10.81-32.43A108,108,0,1,1,236,128Zm-24,0A84,84,0,1,0,55.27,170.06a12,12,0,0,1,1,9.81l-9.93,29.79,29.79-9.93a12.1,12.1,0,0,1,3.8-.62,12,12,0,0,1,6,1.62A84,84,0,0,0,212,128Z\"/>","steam-logo":"<path d=\"M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm50.16,122.22a40,40,0,1,0-57.25-55.34L92.57,123.6,55.18,86.21a83.55,83.55,0,1,1-9.39,24.55l32.76,32.76a32,32,0,0,0,49.51,37.41ZM117,131.27A40.26,40.26,0,0,0,132.73,147L113.3,162l-.25.2a7.93,7.93,0,0,1-5,1.79,8,8,0,0,1-8-8,7.93,7.93,0,0,1,1.79-5.05l.2-.25ZM152,128a16,16,0,1,1,16-16A16,16,0,0,1,152,128Z\"/>","reddit-logo":"<path d=\"M252,104a36,36,0,0,0-57.4-28.93,145.56,145.56,0,0,0-52.54-14.45l3.8-22.81,15.67,2.61a24,24,0,1,0,3.95-23.67L138,12.16A12,12,0,0,0,124.16,22l-6.38,38.31C97.48,61.62,78,66.7,61.4,75.07a36,36,0,0,0-47.52,53.68A62.87,62.87,0,0,0,12,144c0,23.29,12.65,44.87,35.63,60.78C69.26,219.75,97.8,228,128,228s58.74-8.25,80.37-23.22C231.35,188.87,244,167.29,244,144a62.87,62.87,0,0,0-1.88-15.25A36.16,36.16,0,0,0,252,104Zm-29.91,10.34a12,12,0,0,0-5,15A39.61,39.61,0,0,1,220,144c0,15.18-9,29.75-25.29,41.05C177.05,197.27,153.36,204,128,204s-49-6.73-66.71-18.95C45,173.75,36,159.18,36,144a39.74,39.74,0,0,1,2.84-14.64,12,12,0,0,0-4.93-15A12,12,0,1,1,49.71,97a12,12,0,0,0,15.94,3.18l.22-.13C82.94,89.68,105,84,128,84H128c23,0,45,5.69,62.09,16l.22.13A12,12,0,0,0,206.29,97,11.88,11.88,0,0,1,216,92a12,12,0,0,1,6.09,22.34ZM88,148a20,20,0,1,1,20-20A20,20,0,0,1,88,148Zm100-20a20,20,0,1,1-20-20A20,20,0,0,1,188,128Zm-20.52,40.52a12,12,0,0,1-8,15,111.88,111.88,0,0,1-63,0,12,12,0,0,1,7-23,88.12,88.12,0,0,0,49,0A12,12,0,0,1,167.48,168.52Z\"/>","clock":"<path d=\"M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm0,192a84,84,0,1,1,84-84A84.09,84.09,0,0,1,128,212Zm68-84a12,12,0,0,1-12,12H128a12,12,0,0,1-12-12V72a12,12,0,0,1,24,0v44h44A12,12,0,0,1,196,128Z\"/>","download-simple":"<path d=\"M228,144v64a12,12,0,0,1-12,12H40a12,12,0,0,1-12-12V144a12,12,0,0,1,24,0v52H204V144a12,12,0,0,1,24,0Zm-108.49,8.49a12,12,0,0,0,17,0l40-40a12,12,0,0,0-17-17L140,115V32a12,12,0,0,0-24,0v83L96.49,95.51a12,12,0,0,0-17,17Z\"/>","tag":"<path d=\"M246.15,133.18,146.83,33.86A19.85,19.85,0,0,0,132.69,28H40A12,12,0,0,0,28,40v92.69a19.85,19.85,0,0,0,5.86,14.14l99.32,99.32a20,20,0,0,0,28.28,0l84.69-84.69A20,20,0,0,0,246.15,133.18Zm-98.83,93.17L52,131V52h79l95.32,95.32ZM104,88A16,16,0,1,1,88,72,16,16,0,0,1,104,88Z\"/>","arrows-clockwise":"<path d=\"M228,48V96a12,12,0,0,1-12,12H168a12,12,0,0,1,0-24h19l-7.8-7.8a75.55,75.55,0,0,0-53.32-22.26h-.43A75.49,75.49,0,0,0,72.39,75.57,12,12,0,1,1,55.61,58.41a99.38,99.38,0,0,1,69.87-28.47H126A99.42,99.42,0,0,1,196.2,59.23L204,67V48a12,12,0,0,1,24,0ZM183.61,180.43a75.49,75.49,0,0,1-53.09,21.63h-.43A75.55,75.55,0,0,1,76.77,179.8L69,172H88a12,12,0,0,0,0-24H40a12,12,0,0,0-12,12v48a12,12,0,0,0,24,0V189l7.8,7.8A99.42,99.42,0,0,0,130,226.06h.56a99.38,99.38,0,0,0,69.87-28.47,12,12,0,0,0-16.78-17.16Z\"/>","wrench":"<path d=\"M230.47,67.5a12,12,0,0,0-19.26-4.32L172.43,99l-12.68-2.72L157,83.57l35.79-38.78a12,12,0,0,0-4.32-19.26A76.07,76.07,0,0,0,88.41,121.64L30.92,174.18a4.68,4.68,0,0,0-.39.38,36,36,0,0,0,50.91,50.91l.38-.39,52.54-57.49A76.05,76.05,0,0,0,230.47,67.5ZM160,148a51.5,51.5,0,0,1-23.35-5.52,12,12,0,0,0-14.26,2.62L64.31,208.66a12,12,0,0,1-17-17l63.55-58.07a12,12,0,0,0,2.62-14.26A51.5,51.5,0,0,1,108,96a52.06,52.06,0,0,1,52-52h.89L135.17,71.87a12,12,0,0,0-2.91,10.65l5.66,26.35a12,12,0,0,0,9.21,9.21l26.35,5.66a12,12,0,0,0,10.65-2.91L212,95.12c0,.3,0,.59,0,.89A52.06,52.06,0,0,1,160,148Z\"/>","tray":"<path d=\"M208,28H48A20,20,0,0,0,28,48V208a20,20,0,0,0,20,20H208a20,20,0,0,0,20-20V48A20,20,0,0,0,208,28Zm-4,24v92H179.31a19.86,19.86,0,0,0-14.14,5.86L147,168H109L90.83,149.86A19.86,19.86,0,0,0,76.69,144H52V52ZM52,204V168H75l18.14,18.14A19.86,19.86,0,0,0,107.31,192h41.38a19.86,19.86,0,0,0,14.14-5.86L181,168h23v36Z\"/>","sparkle":"<path d=\"M199,125.31l-49.88-18.39L130.69,57a19.92,19.92,0,0,0-37.38,0L74.92,106.92,25,125.31a19.92,19.92,0,0,0,0,37.38l49.88,18.39L93.31,231a19.92,19.92,0,0,0,37.38,0l18.39-49.88L199,162.69a19.92,19.92,0,0,0,0-37.38Zm-63.38,35.16a12,12,0,0,0-7.11,7.11L112,212.28l-16.47-44.7a12,12,0,0,0-7.11-7.11L43.72,144l44.7-16.47a12,12,0,0,0,7.11-7.11L112,75.72l16.47,44.7a12,12,0,0,0,7.11,7.11L180.28,144ZM140,40a12,12,0,0,1,12-12h12V16a12,12,0,0,1,24,0V28h12a12,12,0,0,1,0,24H188V64a12,12,0,0,1-24,0V52H152A12,12,0,0,1,140,40ZM252,88a12,12,0,0,1-12,12h-4v4a12,12,0,0,1-24,0v-4h-4a12,12,0,0,1,0-24h4V72a12,12,0,0,1,24,0v4h4A12,12,0,0,1,252,88Z\"/>","plus":"<path d=\"M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z\"/>","lightbulb":"<path d=\"M180,232a12,12,0,0,1-12,12H88a12,12,0,0,1,0-24h80A12,12,0,0,1,180,232Zm40-128a91.51,91.51,0,0,1-35.17,72.35A12.26,12.26,0,0,0,180,186v2a20,20,0,0,1-20,20H96a20,20,0,0,1-20-20v-2a12,12,0,0,0-4.7-9.51A91.57,91.57,0,0,1,36,104.52C35.73,54.69,76,13.2,125.79,12A92,92,0,0,1,220,104Zm-24,0a68,68,0,0,0-69.65-68C89.56,36.88,59.8,67.55,60,104.38a67.71,67.71,0,0,0,26.1,53.19A35.87,35.87,0,0,1,100,184h56.1A36.13,36.13,0,0,1,170,157.49,67.68,67.68,0,0,0,196,104Zm-20.07-5.32a48.5,48.5,0,0,0-31.91-40,12,12,0,0,0-8,22.62,24.31,24.31,0,0,1,16.09,20,12,12,0,0,0,23.86-2.64Z\"/>","bug-beetle":"<path d=\"M224,160a12,12,0,0,0,0-24H212V120h12a12,12,0,0,0,0-24H210.45a83.7,83.7,0,0,0-18.78-38.7l16.82-16.81a12,12,0,1,0-17-17l-18,18a83.7,83.7,0,0,0-91.1,0l-18-18a12,12,0,0,0-17,17L64.33,57.3A83.7,83.7,0,0,0,45.55,96H32a12,12,0,0,0,0,24H44v16H32a12,12,0,0,0,0,24H44a83.55,83.55,0,0,0,1.55,16H32a12,12,0,0,0,0,24H54.15a84,84,0,0,0,147.7,0H224a12,12,0,0,0,0-24H210.45A83.55,83.55,0,0,0,212,160ZM128,52a60.1,60.1,0,0,1,57.82,44H70.18A60.1,60.1,0,0,1,128,52Zm12,166.79V148a12,12,0,0,0-24,0v70.79A60.09,60.09,0,0,1,68,160V120H188v40A60.09,60.09,0,0,1,140,218.79Z\"/>"};
+const GROUP_ROWS = 8;
+// Area of the game, guessed from the text when nobody has set one. First match wins.
+const AREAS = [
+  ["Crashes & performance", /\b(crash\w*|freez\w*|lag\w*|stutter\w*|fps|(?:poor |low |bad )?performance (?:drops?|issues?|problems?)|loading|load times?|black screen|memory|hang\w*|locks? up)\b/i],
+  ["Account & profile", /\b(account|log ?in|sign ?in|discord link|sync\w*|progress (?:was |is )?lost|restore|carr(?:y|ied) over|streaks?|achievements?|profile page|avatars?)\b/i],
+  ["Game profiles & sens", /\b([Ss]ens(?:itivity|itivities|es)?|[Gg]ame [Pp]rofiles?|[Cc]onver\w*|cm\/360|ADS|DPI|dpi|[Mm]ouse|[Kk]eybinds?|[Ss]moothing|[Ii]nput (?:lag|delay))\b/],
+  ["Controller", /\b(controller|gyro|ps5|playstation|xbox|gamepad|console)\b/i],
+  ["PvP & 1v1", /\b(pvp|1v1|multiplayer|match\w*|lobby|ffa|instashot|lyla|queue|opponent)\b/i],
+  ["Benchmarks & ranked", /\b(benchmarks?|ranks?|ranked|season|potential|rewards?)\b/i],
+  ["Leaderboards", /\b(leaderboards?|standings?|placement)\b/i],
+  ["Creator Studio", /\b(create tab|creator|workshop|task tuning|editor|custom targets?|weapon creat\w*)\b/i],
+  ["Training programs", /\b(training (?:programs?|plans?)|academy|bonus missions?)\b/i],
+  ["Playlists & tasks", /\b(playlists?|tasks?|scenarios?|favou?rites?|training tab|play tab|thumbnail|discovery)\b/i],
+  ["Results & replays", /\b(results? screen|replays?|watch tab|highscores?)\b/i],
+  ["Audio", /\b(audio|sounds?)\b/i],
+  ["Settings & visuals", /\b(settings?|crosshair|outline|colou?rs?|hud|visuals?|themes?|textures?|tiling|fov|resolution|aspect ratio|graphics|post processing)\b/i],
+  ["Gameplay & weapons", /\b(weapons?|guns?|scopes?|hitmarkers?|tracers?|bots?|skins?|gameplay)\b/i],
+  ["Social & chat", /\b(friends?|social|party)\b/i],
+  ["Coach & AI", /\b(coach|ai chat|aimlabs\+ chat)\b/i],
+  ["Store & Aimlabs+", /\b(ads|al\+|aimlabs\+|aimlabs pro|pay\w*|subscription|store|shop|battle ?pass|price|purchase)\b/i],
+  ["UI & navigation", /\b(ui|menu|tab|button|screen|navigation|layout)\b/i],
+];
+const AREA_NAMES = [...AREAS.map((a) => a[0]), "Other"];
 const SRC_ICON = { "Reddit": "reddit-logo", "Steam forum": "steam-logo", "Steam review": "steam-logo", "Discord": "chat-circle-text", "CN community": "chats" };
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -229,16 +306,20 @@ const ic = (n, s = 16) => ICON[n] ? `<svg class="ic" width="${s}" height="${s}" 
 function paintIcons(root = document) { root.querySelectorAll("[data-ic]").forEach((el) => { el.outerHTML = ic(el.dataset.ic, +el.dataset.s || 16); }); }
 const store = { get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 
-const S = { entries: [], db: false, kinds: [], priorities: [], labels: [], sources: [], statuses: [], jiraBase: "",
-  kind: "all", state: "Open", label: new Set(), source: new Set(), quick: "", q: "", sort: "priority", shown: PAGE, logs: {} };
+const S = { entries: [], db: false, kinds: [], priorities: [], labels: [], sources: [], platforms: [], statuses: [], hints: {}, jiraBase: "",
+  kind: "all", stage: "", area: new Set(), label: new Set(), source: new Set(), platform: new Set(), q: "", sort: "priority", open: new Set(), full: new Set(), logs: {} };
+const DONE = "Closed";
 const fmt = (d) => { if (!d) return ""; const t = new Date(d.length === 10 ? d + "T12:00:00" : d); return isNaN(t) ? d : t.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); };
-const reports = (e) => 1 + (e.links || []).length;
-const isOpen = (e) => e.status !== "Done";
+const reports = (e) => Math.max(1 + (e.links || []).length, +(e.extra && e.extra.reports) || 0);
 const prioNum = (e) => parseInt(e.priority, 10) || 0;
 const jiraHref = (e) => safeUrl(e.jira_url) || (S.jiraBase && e.jira_key ? `${S.jiraBase}/browse/${e.jira_key}` : "");
 const fullText = (e) => e.summary || e.title;
-// The title is the summary's first sentence; show only what follows it.
-const rest = (e) => { const s = (e.summary || "").trim(), t = (e.title || "").replace(/…$/, ""); return s.replace(/\s+/g, " ").startsWith(t) ? s.replace(/\s+/g, " ").slice(t.length).trim() : s; };
+const rest = (e) => { const s = (e.summary || "").trim().replace(/\s+/g, " "), t = (e.title || "").replace(/…$/, ""); return s.startsWith(t) ? s.slice(t.length).trim() : s; };
+const areaOf = (e) => e.area || (AREAS.find(([, re]) => re.test(`${e.title} ${e.summary} ${e.jira}`)) || ["Other"])[0];
+const ageDays = (e) => { const t = Date.parse((e.posted_at || e.added_at || "").slice(0, 10) + "T12:00:00Z"); return isNaN(t) ? null : Math.max(0, Math.floor((Date.now() - t) / 864e5)); };
+const KIND_TAG = { Bug: ["bug", "bug-beetle", "Bug"], Feedback: ["fb", "lightbulb", "FB"], Request: ["req", "sparkle", "Req"] };
+const ktag = (k) => { const [c, i, t] = KIND_TAG[k] || KIND_TAG.Feedback; return `<span class="ktag ${c}">${ic(i, 13)}${t}</span>`; };
+const stageKey = (s) => "st-" + String(s).replace(/[^a-z]+/gi, "-").toLowerCase();
 
 async function load(again = 0) {
   let d;
@@ -252,106 +333,156 @@ async function load(again = 0) {
     return;
   }
   Object.assign(S, { entries: d.entries || [], db: !!d.db, kinds: d.kinds || [], priorities: d.priorities || [], labels: d.labels || [],
-    sources: d.sources || [], statuses: d.statuses || [], jiraBase: d.jira_base || "" });
+    sources: d.sources || [], platforms: d.platforms || [], statuses: d.statuses || [], hints: d.stage_hints || {}, jiraBase: d.jira_base || "" });
   $("#mode").textContent = S.db ? (d.pending ? `Importing, ${d.pending} left…` : "Live, saves for everyone") : "Read-only";
   $("#mode-dot").className = "pulse " + (S.db ? "ok" : "warn");
   const b = $("#banner");
   b.hidden = S.db;
-  if (!S.db) b.innerHTML = `${ic("warning")}<div><b>Saving is not switched on yet.</b> The imported sheet and entries added in Claude chat show here, but edits on this page can't be saved until the tracker database is connected to the site.</div>`;
+  if (!S.db) b.innerHTML = `${ic("warning")}<div><b>Saving is not switched on here.</b> Entries show, but changes on this page can't be saved until the tracker database is connected to this site.</div>`;
   $("#add").disabled = !S.db;
   render();
   if (d.pending && again < 60) setTimeout(() => load(again + 1), 1200);
 }
 
-function filtered() {
-  const q = S.q.trim().toLowerCase(), since = Date.now() - 30 * 864e5;
-  let xs = S.entries.filter((e) => (S.kind === "all" || e.kind === S.kind)
-    && (!S.state || e.status === S.state || S.quick === "done")
+function matches(e, skip) {
+  const q = S.q.trim().toLowerCase();
+  return (S.kind === "all" || e.kind === S.kind)
+    && (skip === "area" || !S.area.size || S.area.has(areaOf(e)))
     && (!S.label.size || (e.tags || []).some((t) => S.label.has(t)))
     && (!S.source.size || S.source.has(e.source || "Unknown"))
-    && (!q || [e.title, e.summary, e.notes, e.jira, e.jira_key, e.where, e.source, e.added_by, "#" + e.n, ...(e.tags || [])].join(" ").toLowerCase().includes(q)));
-  if (S.quick === "bugs") xs = xs.filter((e) => e.kind === "Bug" && isOpen(e));
-  if (S.quick === "repro") xs = xs.filter((e) => isOpen(e) && (e.tags || []).includes("Needs repro"));
-  if (S.quick === "noticket") xs = xs.filter((e) => isOpen(e) && !e.jira_key && !e.jira_url && prioNum(e) >= 4);
-  if (S.quick === "done") xs = xs.filter((e) => !isOpen(e) && Date.parse(e.updated_at) >= since);
+    && (!S.platform.size || (e.platforms || []).some((p) => S.platform.has(p)))
+    && (!q || [e.title, e.summary, e.notes, e.jira, e.jira_key, e.where, e.source, e.added_by, areaOf(e), "#" + e.n, ...(e.tags || []), ...(e.platforms || [])].join(" ").toLowerCase().includes(q));
+}
+function sorted(xs) {
   const posted = (e) => e.posted_at || (e.added_at || "").slice(0, 10);
   const cmp = {
-    priority: (a, b) => prioNum(b) - prioNum(a) || posted(b).localeCompare(posted(a)),
-    posted: (a, b) => posted(b).localeCompare(posted(a)),
+    priority: (a, b) => prioNum(b) - prioNum(a) || reports(b) - reports(a) || posted(b).localeCompare(posted(a)),
     reports: (a, b) => reports(b) - reports(a) || prioNum(b) - prioNum(a),
+    posted: (a, b) => posted(b).localeCompare(posted(a)),
     changed: (a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""),
   }[S.sort];
   return xs.sort((a, b) => cmp(a, b) || b.n - a.n);
 }
-
-function chipRow(el, values, set, attr, counts) {
-  el.innerHTML = values.map((v) => `<button class="chipbtn" data-${attr}="${esc(v)}" aria-pressed="${set.has(v)}">${esc(v)}<span class="n">${counts(v)}</span></button>`).join("");
+function chipRow(el, values, set, attr, count) {
+  el.innerHTML = values.map((v) => `<button class="chipbtn" data-${attr}="${esc(v)}" aria-pressed="${set.has(v)}">${esc(v)}<span class="n">${count(v)}</span></button>`).join("");
 }
 
 function render() {
-  const all = S.entries, open = all.filter(isOpen), since = Date.now() - 30 * 864e5;
-  $("#h-bugs").textContent = open.filter((e) => e.kind === "Bug").length;
-  $("#h-bugs-sub").textContent = `${open.filter((e) => e.kind === "Bug" && prioNum(e) >= 5).length} very high or critical`;
-  $("#h-repro").textContent = open.filter((e) => (e.tags || []).includes("Needs repro")).length;
-  $("#h-noticket").textContent = open.filter((e) => !e.jira_key && !e.jira_url && prioNum(e) >= 4).length;
-  $("#h-done").textContent = all.filter((e) => !isOpen(e) && Date.parse(e.updated_at) >= since).length;
-  document.querySelectorAll(".cell").forEach((c) => c.setAttribute("aria-pressed", c.dataset.q === S.quick));
-  const scope = all.filter((e) => (S.kind === "all" || e.kind === S.kind) && (!S.state || e.status === S.state));
-  $("#kinds").innerHTML = [["all", "All"], ["Bug", "Bugs"], ["Feedback", "Feedback"]].map(([k, label]) =>
-    `<button class="tab" role="tab" data-kind="${esc(k)}" aria-selected="${S.kind === k}">${esc(label)}<span class="n">${all.filter((e) => (k === "all" || e.kind === k) && (!S.state || e.status === S.state)).length}</span></button>`).join("");
-  chipRow($("#labels"), S.labels, S.label, "label", (v) => scope.filter((e) => (e.tags || []).includes(v)).length);
-  const srcs = [...S.sources, ...(scope.some((e) => !e.source) ? ["Unknown"] : [])];
-  chipRow($("#sources"), srcs.filter((v) => scope.some((e) => (e.source || "Unknown") === v) || S.source.has(v)), S.source, "source", (v) => scope.filter((e) => (e.source || "Unknown") === v).length);
-  const xs = filtered();
-  $("#list").innerHTML = xs.length ? xs.slice(0, S.shown).map(card).join("") : `<div class="empty">${all.length ? "Nothing matches these filters." : "No entries yet. Add one here, or tell Claude in the project chat: paste a link, a screenshot or a few words."}</div>`;
-  const more = $("#more");
-  more.hidden = xs.length <= S.shown;
-  more.textContent = `Show more (${xs.length - S.shown} left)`;
+  const all = S.entries;
+  const inView = all.filter((e) => matches(e));
+  // next-step board: counts follow the type, area, label, source and search filters
+  $("#stages").innerHTML = S.statuses.map((s) => {
+    const xs = inView.filter((e) => e.status === s), hi = xs.filter((e) => prioNum(e) >= 5).length;
+    return `<button class="stage ${stageKey(s)}" data-stage="${esc(s)}" aria-pressed="${S.stage === s}">
+      <span class="lbl">${esc(s)}</span><span class="big">${xs.length}</span>
+      <span class="sub">${hi ? `<b class="neg">${hi} very high+</b> · ` : ""}${esc(S.hints[s] || "")}</span></button>`;
+  }).join("");
+  const scope = all.filter((e) => (!S.stage ? e.status !== DONE : e.status === S.stage));
+  $("#kinds").innerHTML = [["all", "All"], ["Bug", "Bugs"], ["Feedback", "Feedback"], ["Request", "Requests"]].map(([k, label]) =>
+    `<button class="tab" role="tab" data-kind="${esc(k)}" aria-label="${esc(label)}" aria-selected="${S.kind === k}">${KIND_TAG[k] ? `<span class="kic ${KIND_TAG[k][0]}">${ic(KIND_TAG[k][1], 15)}</span>` : ""}<span class="${KIND_TAG[k] ? "tl" : ""}">${esc(label)}</span><span class="n">${scope.filter((e) => k === "all" || e.kind === k).length}</span></button>`).join("");
+  const areaScope = scope.filter((e) => matches(e, "area"));
+  chipRow($("#areas"), AREA_NAMES.filter((a) => areaScope.some((e) => areaOf(e) === a) || S.area.has(a)), S.area, "area", (v) => areaScope.filter((e) => areaOf(e) === v).length);
+  const sc2 = scope.filter((e) => S.kind === "all" || e.kind === S.kind);
+  chipRow($("#labels"), S.labels, S.label, "label", (v) => sc2.filter((e) => (e.tags || []).includes(v)).length);
+  const srcs = [...S.sources, ...(sc2.some((e) => !e.source) ? ["Unknown"] : [])];
+  chipRow($("#sources"), srcs.filter((v) => sc2.some((e) => (e.source || "Unknown") === v) || S.source.has(v)), S.source, "source", (v) => sc2.filter((e) => (e.source || "Unknown") === v).length);
+  chipRow($("#platforms"), S.platforms.filter((v) => sc2.some((e) => (e.platforms || []).includes(v)) || S.platform.has(v)), S.platform, "platform", (v) => sc2.filter((e) => (e.platforms || []).includes(v)).length);
+  const nf = S.label.size + S.source.size + S.platform.size;
+  $("#more-filters").textContent = nf ? `More filters (${nf} on)` : "More filters";
+
+  // one group per next step (or just the chosen one)
+  const groups = (S.stage ? [S.stage] : S.statuses.filter((s) => s !== DONE)).map((s) => [s, sorted(inView.filter((e) => e.status === s))]);
+  const html = groups.filter(([, xs]) => xs.length || S.stage).map(([s, xs]) => {
+    const cap = S.stage || S.full.has(s) || S.q ? xs.length : GROUP_ROWS;
+    return `<section class="group">
+      <div class="ghead"><h2>${esc(s)}</h2><span class="n">${xs.length}</span><span class="ghint">${esc(S.hints[s] || "")}</span></div>
+      <div class="rows">${xs.slice(0, cap).map(row).join("") || `<div class="empty sm">Nothing here with these filters.</div>`}</div>
+      ${xs.length > cap ? `<button class="btn ghost sm" data-full="${esc(s)}">Show all ${xs.length}</button>` : ""}
+    </section>`;
+  }).join("");
+  $("#list").innerHTML = html || `<div class="empty">${all.length ? "Nothing matches these filters." : "No entries yet. Add one here, or tell Claude in the project chat: paste a link, a screenshot or a few words."}</div>`;
   highlight();
 }
 
-function card(e) {
+function row(e) {
+  const p = prioNum(e), open = S.open.has(e.id), age = ageDays(e);
+  return `<article class="item ${open ? "is-open" : ""}" id="${esc(e.id)}">
+    <button class="line" data-toggle="${esc(e.id)}" aria-expanded="${open}">
+      <span class="pdot p${p}" title="${esc(e.priority || "No priority")}">${p || "–"}</span>
+      <span class="num">#${esc(e.n)}</span>
+      ${ktag(e.kind)}
+      <span class="ltitle">${esc(e.title)}</span>
+      <span class="lmeta">
+        <span class="tag area">${esc(areaOf(e))}</span>
+        ${reports(e) > 1 ? `<span class="tag">×${reports(e)}</span>` : ""}
+        ${e.jira_key ? `<span class="tag jira">${esc(e.jira_key)}</span>` : ""}
+        <span class="age">${age === null ? "" : age + "d"}</span>
+      </span>
+    </button>
+    ${open ? detail(e) : ""}
+  </article>`;
+}
+
+function detail(e) {
   const url = safeUrl(e.url), jira = jiraHref(e);
   const links = (e.links || []).map(safeUrl).filter(Boolean);
   const shots = (e.shots || []).map(safeUrl).filter(Boolean);
   const log = S.logs[e.id];
-  const p = prioNum(e);
-  const jiraTag = e.jira_key || jira ? (jira
-    ? `<a class="tag jira" href="${esc(jira)}" target="_blank" rel="noopener" title="${esc(e.jira)}">${esc(e.jira_key || "Jira")}${e.jira_status ? " · " + esc(e.jira_status) : ""}${ic("arrow-square-out", 13)}</a>`
-    : `<span class="tag jira" title="${esc(e.jira)}">${esc(e.jira_key)}</span>`) : "";
   const jtitle = e.jira && e.jira_key ? e.jira.replace(e.jira_key, "").replace(/^[\s:–-]+/, "") : "";
-  return `<article class="card ${e.kind === "Bug" ? "k-Bug" : ""} ${isOpen(e) ? "" : "closed"}" id="${esc(e.id)}">
-    <div class="top"><span class="num">#${esc(e.n)}</span><span class="tag ${e.kind === "Bug" ? "k-Bug" : ""}">${esc(e.kind)}</span>
-      ${e.priority ? `<span class="tag p${p}">${esc(e.priority.replace(/^\d - /, ""))}</span>` : ""}
-      ${isOpen(e) ? "" : `<span class="tag done">${ic("check", 13)}Done</span>`}
-      ${jiraTag}
+  const dup = e.dup_of && S.entries.find((x) => x.id === e.dup_of);
+  return `<div class="detail">
+    <div class="top">
+      ${e.priority ? `<span class="tag p${prioNum(e)}">${esc(e.priority)}</span>` : ""}
+      ${jira ? `<a class="tag jira" href="${esc(jira)}" target="_blank" rel="noopener">${esc(e.jira_key || "Jira")}${e.jira_status ? " · " + esc(e.jira_status) : ""}${ic("arrow-square-out", 13)}</a>` : ""}
       ${(e.tags || []).map((t) => `<span class="tag lbl-t">${esc(t)}</span>`).join("")}
-      ${reports(e) > 1 ? `<span class="tag">${reports(e)} reports</span>` : ""}
-      <span class="when">${e.posted_at ? esc(fmt(e.posted_at)) : "Added " + esc(fmt(e.added_at))}</span></div>
-    <div class="title">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(e.title)}${ic("arrow-square-out", 14)}</a>` : esc(e.title)}</div>
-    ${rest(e) ? `<div class="ptxt clamp">${esc(rest(e))}</div>` : ""}
+      ${(e.platforms || []).length ? `<span class="tag plat">${esc(e.platforms.join(", "))}</span>` : ""}
+      <span class="when">${e.posted_at ? "Posted " + esc(fmt(e.posted_at)) : "Added " + esc(fmt(e.added_at))}</span></div>
+    ${url ? `<a class="qlink open-src" href="${esc(url)}" target="_blank" rel="noopener">Open the original post${ic("arrow-square-out", 14)}</a>` : ""}
+    ${e.summary ? `<div class="ptxt">${esc(rest(e) ? e.summary : "")}</div>` : ""}
     ${e.source || e.where ? `<div class="where">${ic(SRC_ICON[e.source] || "tag", 13)} ${esc([e.source, e.where].filter(Boolean).join(" · "))}</div>` : ""}
     ${jtitle ? `<div class="jtxt"><b>${esc(e.jira_key)}</b> ${esc(jtitle)}</div>` : ""}
+    ${dup ? `<div class="jtxt">Duplicate of <a class="qlink inl" href="#${esc(dup.id)}">#${esc(dup.n)} ${esc(dup.title)}</a></div>` : ""}
     ${e.notes ? `<div class="notes"><span class="lbl">Note</span>${esc(e.notes)}</div>` : ""}
     ${links.length ? `<div class="links">${links.map((l, i) => `<a class="tag" href="${esc(l)}" target="_blank" rel="noopener">Report ${i + 2}${ic("arrow-square-out", 13)}</a>`).join("")}</div>` : ""}
     ${shots.length ? `<div class="shots">${shots.map((s) => `<a href="${esc(s)}" target="_blank" rel="noopener"><img src="${esc(s)}" alt="Screenshot" loading="lazy"></a>`).join("")}</div>` : ""}
-    ${log ? `<div class="log">${log.length ? log.map((l) => `<div>${esc(fmt(l.at))} · <b>${esc(l.by || "Someone")}</b> changed ${esc(l.field.replace("_", " ").replace("tags", "labels"))}${["status", "priority"].includes(l.field) ? ` to <b>${esc(JSON.parse(l.new || '""'))}</b>` : ""}</div>`).join("") : "No changes since it was added."}</div>` : ""}
-    <div class="foot"><span>${e.added_by ? esc(e.added_by) : "Added"} ${esc(fmt(e.added_at))}${e.updated_by && e.updated_by !== e.added_by ? ` · changed ${esc(fmt(e.updated_at))} by ${esc(e.updated_by)}` : ""}${e.slack && e.slack.startsWith("sent") ? " · posted to Slack" : ""}</span>
-      <span class="acts">${S.db ? `<button class="btn sm ghost" data-log="${esc(e.id)}">${log ? "Hide history" : "History"}</button><button class="btn sm" data-edit="${esc(e.id)}">Edit</button>` : ""}</span></div>
-  </article>`;
+    ${S.db ? `<div class="moveto"><span class="lbl">Move to</span><div class="filters">${S.statuses.map((s) =>
+      `<button class="chipbtn" data-move="${esc(e.id)}" data-to="${esc(s)}" aria-pressed="${s === e.status}">${esc(s)}</button>`).join("")}</div></div>` : ""}
+    ${log ? `<div class="log">${log.length ? log.map((l) => `<div>${esc(fmt(l.at))} · <b>${esc(l.by || "Someone")}</b> changed ${esc(l.field.replace("_", " ").replace("tags", "labels").replace("status", "next step"))}${["status", "priority", "area"].includes(l.field) ? ` to <b>${esc(JSON.parse(l.new || '""'))}</b>` : ""}</div>`).join("") : "No changes since it was added."}</div>` : ""}
+    <div class="foot"><span>${esc(e.added_by || "Added")} ${esc(fmt(e.added_at))}${e.updated_by && e.updated_by !== e.added_by ? ` · changed ${esc(fmt(e.updated_at))} by ${esc(e.updated_by)}` : ""}</span>
+      ${S.db ? `<span class="acts">
+        <span class="merge"><input data-mergein="${esc(e.id)}" inputmode="numeric" placeholder="#" aria-label="Merge into entry number"><button class="btn sm ghost" data-merge="${esc(e.id)}">Merge into</button></span>
+        <button class="btn sm ghost" data-log="${esc(e.id)}">${log ? "Hide history" : "History"}</button><button class="btn sm" data-edit="${esc(e.id)}">Edit</button></span>` : ""}</div>
+  </div>`;
 }
 
 function highlight() {
   const id = decodeURIComponent(location.hash.slice(1));
-  if (!id) return;
-  let el = document.getElementById(id);
-  if (!el) {
-    const e = S.entries.find((x) => x.id === id);
-    if (!e) return;
-    Object.assign(S, { kind: "all", state: "", quick: "", q: "#" + e.n }); $("#q").value = S.q; S.label.clear(); S.source.clear();
-    return render();
+  if (!id || highlight.done === id) return;
+  const e = S.entries.find((x) => x.id === id);
+  if (!e) return;
+  highlight.done = id;
+  Object.assign(S, { kind: "all", stage: e.status, q: "" }); $("#q").value = ""; S.area.clear(); S.label.clear(); S.source.clear(); S.platform.clear(); S.open.add(id);
+  render();
+  const el = document.getElementById(id);
+  if (el) { el.classList.add("hl"); el.scrollIntoView({ block: "start" }); }
+}
+
+// ---- saving ----
+function whoAmI() {
+  let by = store.get("trk_name");
+  if (!by) { openSheet(null, "name"); return ""; }
+  return by;
+}
+async function post(body) {
+  const r = await fetch("/api/tracker", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || "Not saved");
+  for (const x of [d.entry, d.into].filter(Boolean)) {
+    const i = S.entries.findIndex((y) => y.id === x.id);
+    if (i >= 0) S.entries[i] = x; else S.entries.unshift(x);
+    delete S.logs[x.id];
   }
-  if (!el.classList.contains("hl")) { el.classList.add("hl"); el.scrollIntoView({ block: "start" }); }
+  return d;
 }
 
 // ---- add / edit ----
@@ -363,16 +494,21 @@ function paintForm() {
   seg($("#f-kind"), S.kinds, F.kind, "fkind");
   seg($("#f-status"), S.statuses, F.status, "fstatus");
   seg($("#f-priority"), S.priorities, F.priority, "fpriority");
+  seg($("#f-area"), AREA_NAMES, F.area, "farea");
   seg($("#f-labels"), S.labels, F.tags, "flabel", true);
   seg($("#f-source"), S.sources, F.source, "fsource");
+  seg($("#f-platforms"), S.platforms, F.platforms, "fplatform", true);
 }
-function openSheet(e) {
-  editing = e || null;
+let nameOnly = false;
+function openSheet(e, mode) {
+  editing = e || null; nameOnly = mode === "name";
   const f = $("#form");
-  $("#sheet-title").textContent = e ? `Edit #${e.n}` : "Add entry";
-  F = { kind: e?.kind || "Bug", status: e?.status || "Open", priority: e?.priority || "3 - Medium", tags: new Set(e?.tags || []), source: e?.source || "" };
+  $("#sheet-title").textContent = nameOnly ? "Who's making changes?" : e ? `Edit #${e.n}` : "Add entry";
+  f.querySelectorAll(".field, .row2").forEach((el) => (el.hidden = nameOnly && !el.contains(f.elements.by)));
+  F = { kind: e?.kind || "Bug", status: e?.status || "Triage", priority: e?.priority || "3 - Medium", area: e?.area || "", tags: new Set(e?.tags || []), source: e?.source || "", platforms: new Set(e?.platforms || []) };
   paintForm();
   f.elements.text.value = e ? fullText(e) : "";
+  f.elements.text.required = !nameOnly;
   f.elements.url.value = e?.url || "";
   f.elements.where.value = e?.where || "";
   f.elements.jira.value = e?.jira_url || e?.jira || "";
@@ -397,23 +533,19 @@ async function save(ev) {
   const by = f.elements.by.value.trim();
   if (!by) { err.textContent = "Add your name so the team can see who changed what."; err.hidden = false; return; }
   store.set("trk_name", by);
+  if (nameOnly) { $("#sheet").close(); toast("Thanks, now try that again"); return; }
   const [title, summary] = splitTitle(f.elements.text.value);
   const jira = f.elements.jira.value.trim(), isLink = /^https?:\/\//i.test(jira);
-  const data = { kind: F.kind, status: F.status, priority: F.priority, tags: [...F.tags], source: F.source, title, summary,
+  const data = { kind: F.kind, status: F.status, priority: F.priority, area: F.area, tags: [...F.tags], platforms: [...F.platforms], source: F.source, title, summary,
     url: f.elements.url.value, where: f.elements.where.value, posted_at: f.elements.posted_at.value, notes: f.elements.notes.value,
     links: lines(f.elements.links.value), shots: lines(f.elements.shots.value) };
   if (isLink) data.jira_url = jira; // keeps the "ORB-1234: title" text from the sheet
   else { data.jira = jira; data.jira_url = ""; }
   $("#save").disabled = true;
   try {
-    const r = await fetch("/api/tracker", { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify(editing ? { action: "update", id: editing.id, set: data, by } : { action: "add", entry: data, by }) });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || "Not saved");
-    const i = S.entries.findIndex((x) => x.id === d.entry.id);
-    if (i >= 0) S.entries[i] = d.entry; else S.entries.unshift(d.entry);
-    delete S.logs[d.entry.id];
+    const d = await post(editing ? { action: "update", id: editing.id, set: data, by } : { action: "add", entry: data, by });
     $("#sheet").close();
+    S.open.add(d.entry.id);
     toast(editing ? "Saved" : `Added #${d.entry.n}` + (d.entry.slack?.startsWith("sent") ? ", posted to Slack" : ""));
     render();
   } catch (e) { err.textContent = e.message; err.hidden = false; }
@@ -422,24 +554,41 @@ async function save(ev) {
 function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 2600); }
 
 function csv() {
-  const cols = ["n", "kind", "priority", "status", "title", "summary", "posted_at", "url", "source", "where", "tags", "jira", "jira_url", "notes", "links", "added_by", "updated_at", "updated_by"];
+  const cols = ["n", "kind", "status", "priority", "area", "title", "summary", "posted_at", "url", "source", "where", "platforms", "tags", "jira", "jira_url", "notes", "links", "added_by", "updated_at", "updated_by"];
   const cell = (v) => { v = Array.isArray(v) ? v.join(", ") : String(v ?? ""); return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
-  const body = [cols.join(","), ...filtered().map((e) => cols.map((c) => cell(e[c])).join(","))].join("\n");
+  const xs = sorted(S.entries.filter((e) => matches(e) && (S.stage ? e.status === S.stage : true)));
+  const body = [cols.join(","), ...xs.map((e) => cols.map((c) => cell(c === "area" ? areaOf(e) : e[c])).join(","))].join("\n");
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["﻿" + body], { type: "text/csv" })), download: `feedback-tracker-${new Date().toISOString().slice(0, 10)}.csv` });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 const toggle = (set, v) => (set.has(v) ? set.delete(v) : set.add(v));
-const pressSeg = (sel, t) => document.querySelectorAll(sel + " .chipbtn").forEach((b) => b.setAttribute("aria-pressed", b === t));
 document.addEventListener("click", async (ev) => {
   const t = ev.target.closest("button"); if (!t) return;
   const d = t.dataset;
-  if (d.kind) { S.kind = d.kind; S.shown = PAGE; render(); }
-  else if (d.state !== undefined) { S.state = d.state; S.shown = PAGE; pressSeg("#state", t); render(); }
-  else if (d.label) { toggle(S.label, d.label); S.shown = PAGE; render(); }
-  else if (d.source) { toggle(S.source, d.source); S.shown = PAGE; render(); }
-  else if (d.q) { S.quick = S.quick === d.q ? "" : d.q; S.shown = PAGE; render(); }
-  else if (d.sort) { S.sort = d.sort; pressSeg("#sort", t); render(); }
+  if (d.toggle) { toggle(S.open, d.toggle); render(); }
+  else if (d.stage !== undefined && t.classList.contains("stage")) { S.stage = S.stage === d.stage ? "" : d.stage; render(); }
+  else if (d.kind) { S.kind = d.kind; render(); }
+  else if (d.area) { toggle(S.area, d.area); render(); }
+  else if (d.label) { toggle(S.label, d.label); render(); }
+  else if (d.source) { toggle(S.source, d.source); render(); }
+  else if (d.platform) { toggle(S.platform, d.platform); render(); }
+  else if (d.full) { S.full.add(d.full); render(); }
+  else if (d.sort) { S.sort = d.sort; document.querySelectorAll("#sort .chipbtn").forEach((b) => b.setAttribute("aria-pressed", b === t)); render(); }
+  else if (d.move) {
+    const e = S.entries.find((x) => x.id === d.move);
+    if (!e || e.status === d.to) return;
+    const by = whoAmI(); if (!by) return;
+    try { await post({ action: "update", id: e.id, set: { status: d.to }, by }); toast(`#${e.n} moved to ${d.to}`); render(); }
+    catch (err) { toast(err.message); }
+  }
+  else if (d.merge) {
+    const into = (document.querySelector(`[data-mergein="${CSS.escape(d.merge)}"]`)?.value || "").trim();
+    if (!into) { toast("Type the # of the entry to merge into"); return; }
+    const by = whoAmI(); if (!by) return;
+    try { const r = await post({ action: "merge", id: d.merge, into, by }); S.open.delete(d.merge); S.open.add(r.into.id); toast(`Merged into #${r.into.n}`); render(); }
+    catch (err) { toast(err.message); }
+  }
   else if (d.edit) openSheet(S.entries.find((e) => e.id === d.edit));
   else if (d.log) {
     if (S.logs[d.log]) delete S.logs[d.log];
@@ -449,16 +598,18 @@ document.addEventListener("click", async (ev) => {
   else if (d.fkind) { F.kind = d.fkind; paintForm(); }
   else if (d.fstatus) { F.status = d.fstatus; paintForm(); }
   else if (d.fpriority) { F.priority = d.fpriority; paintForm(); }
+  else if (d.farea) { F.area = F.area === d.farea ? "" : d.farea; paintForm(); }
   else if (d.flabel) { toggle(F.tags, d.flabel); paintForm(); }
+  else if (d.fplatform) { toggle(F.platforms, d.fplatform); paintForm(); }
   else if (d.fsource) { F.source = F.source === d.fsource ? "" : d.fsource; paintForm(); }
 });
-$("#more").onclick = () => { S.shown += PAGE; render(); };
+$("#more-filters").onclick = (ev) => { const x = $("#extra-filters"); x.hidden = !x.hidden; ev.currentTarget.setAttribute("aria-expanded", !x.hidden); };
 $("#add").onclick = () => openSheet(null);
 $("#close").onclick = $("#cancel").onclick = () => $("#sheet").close();
 $("#form").onsubmit = save;
 $("#csv").onclick = csv;
-$("#q").oninput = (e) => { S.q = e.target.value; S.shown = PAGE; render(); };
-window.addEventListener("hashchange", highlight);
+$("#q").oninput = (e) => { S.q = e.target.value; render(); };
+window.addEventListener("hashchange", () => { highlight.done = ""; highlight(); });
 paintIcons();
 load();
 </script>
