@@ -11,6 +11,9 @@ screenshots to <site_tracker_dir>/shots/. functions/api/tracker.js applies each 
 An op is {"op_id", "type": "add"|"update", "at", "by", "entry": {...}} or {..., "id"|"n", "set": {...}};
 "notify": false skips the Slack post (imports). {"op_id", "type": "suggest", "at", "item": {...}} is a report the
 morning run found (Suggested tab); it waits there until someone on the team adds or dismisses it.
+{"op_id", "type": "group", "at", "id", "into", "same"} puts entry id under the group led by entry into (same = the
+same player again, counted once); {"op_id", "type": "more", "id", "more": [{d, t, o, u, src, lang}]} stores the
+dates, texts and links of reports folded into one entry.
 """
 import hashlib, json, os, shutil, sys
 
@@ -37,7 +40,7 @@ def main(dest, *srcs):
                     bad += 1
                     continue
                 for op in d.get("ops", [d]) if isinstance(d, dict) else d:
-                    if isinstance(op, dict) and op.get("op_id") and op.get("type") in ("add", "update", "suggest"):
+                    if isinstance(op, dict) and op.get("op_id") and op.get("type") in ("add", "update", "suggest", "group", "more"):
                         ops.append(op)
                     else:
                         bad += 1

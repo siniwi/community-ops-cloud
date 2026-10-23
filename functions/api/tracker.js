@@ -11,10 +11,17 @@
 //   GET  /api/tracker?log=<id>      -> { log: [...] } change history of one entry
 //   POST /api/tracker {action:"add", entry, by}             -> { entry }
 //   POST /api/tracker {action:"update", id, set, by}        -> { entry }
-//   POST /api/tracker {action:"merge", id, into, by}        -> { entry, into } folds a duplicate into #into as one more report
+//   POST /api/tracker {action:"group", id, into, same, by}  -> { entry, into, moved } puts the report under #into's group
+//   POST /api/tracker {action:"ungroup", id, by}            -> { entry }  takes it out of its group again
+//   POST /api/tracker {action:"same", id, same, by}         -> { entry }  same player twice (counts once) or another player
 //   POST /api/tracker {action:"suggest_add", sids, entry, by}    -> { entry, done }  Suggested reports become a new entry
 //   POST /api/tracker {action:"suggest_merge", sids, into, by}   -> { into, done }   ... or extra reports on #into
 //   POST /api/tracker {action:"suggest_dismiss", sids, by}       -> { done }
+//
+// Groups: a report about the same thing as another entry keeps its own row, date, text and link, with dup_of
+// pointing at the group's first entry (one level, never a chain). The group moves through the stages as one
+// and counts one report per player: extra.same marks the same player logging it twice. Extra reports that
+// have no row of their own (folded in at import, +1s from Suggested) sit in extra.more as {d, t, o, u, src, lang, same}.
 //
 // Suggested: the weekday morning run sorts new Steam reviews, Reddit posts and Steam forum threads
 // into bug / feedback / request with an English translation, and drops them in tracker_ops/ as
@@ -210,8 +217,19 @@ async function openSuggestions(db, sids) {
 }
 const closeSuggestions = (db, items, state, into, by, at) => db.prepare(`UPDATE tracker_suggest SET state = ?, "into" = ?, by = ?, done_at = ?
   WHERE state = 'new' AND sid IN (${items.map(() => "?").join(", ")})`).bind(state, into, by, at, ...items.map((x) => x.sid));
-const reportLine = (x) => `- ${x.source}${x.lang && x.lang !== "english" ? ` (${x.lang})` : ""}${x.posted_at ? ", " + x.posted_at.slice(0, 10) : ""}: `
-  + `${(x.english || x.text).replace(/\s+/g, " ").slice(0, 300)}${x.english && x.text ? `\n  Original: ${x.text.replace(/\s+/g, " ").slice(0, 300)}` : ""}`;
+
+// One extra report without a row of its own: date, English text, original, link, source, language.
+const cleanMore = (m) => ({ d: clip(m && m.d, 40), t: clip(m && m.t, 600), o: clip(m && m.o, 600), u: /^https?:\/\//i.test((m && m.u) || "") ? clip(m.u, 1000) : "",
+  src: clip(m && m.src, 40), lang: clip(m && m.lang, 40), ...(m && m.same ? { same: true } : {}) });
+const moreOf = (x) => cleanMore({ d: x.posted_at, t: x.english || x.text, o: x.english ? x.text : "", u: x.url, src: x.source, lang: x.lang });
+async function setExtra(db, id, extra) { await db.prepare("UPDATE tracker SET extra = ? WHERE id = ?").bind(JSON.stringify(extra), id).run(); }
+async function rootOf(db, into) {
+  const key = String(into ?? "").replace(/^#/, "");
+  const row = /^\d+$/.test(key) ? await db.prepare("SELECT id FROM tracker WHERE n = ?").bind(+key).first() : { id: key };
+  let e = row && (await getOne(db, row.id));
+  if (e && e.dup_of) e = (await getOne(db, e.dup_of)) || e; // grouping into a member joins its group
+  return e;
+}
 
 function insertStmt(db, e) {
   const r = toRow(e);
@@ -247,6 +265,18 @@ async function applyOps(ctx, db, bundle) {
       if (id) await update(db, id, op.set, op.by || "Claude (chat)", at);
       await claim.run();
       used += 4;
+    } else if (op.type === "group" && op.id && op.into && op.id !== op.into) {
+      // chat / one-off grouping: ids are final group roots, so no re-pointing here
+      const by = clip(op.by || "Claude (chat)", 80);
+      await db.batch([claim, db.prepare(`UPDATE tracker SET dup_of = ?, extra = json_set(COALESCE(NULLIF(extra, ''), '{}'), '$.same', json(?)),
+        updated_at = ?, updated_by = ? WHERE id = ? AND COALESCE(dup_of, '') = ''`).bind(op.into, op.same ? "true" : "false", at, by, op.id),
+        db.prepare("INSERT INTO tracker_log (at, id, by, field, old, new) VALUES (?, ?, ?, 'dup_of', '\"\"', ?)").bind(at, op.id, by, JSON.stringify(op.into))]);
+      used += 3;
+    } else if (op.type === "more" && op.id && Array.isArray(op.more)) {
+      // per-report details (date, text, link) for reports folded into one entry
+      await db.batch([claim, db.prepare(`UPDATE tracker SET extra = json_set(COALESCE(NULLIF(extra, ''), '{}'), '$.more', json(?)) WHERE id = ?`)
+        .bind(JSON.stringify(op.more.map(cleanMore).slice(0, 200)), op.id)]);
+      used += 2;
     } else if (op.type === "suggest" && op.item?.sid) {
       const it = cleanSuggest(op.item);
       await db.batch([claim, db.prepare("INSERT INTO tracker_suggest (sid, at, data, state) VALUES (?, ?, ?, 'new') ON CONFLICT(sid) DO NOTHING")
@@ -269,6 +299,10 @@ function replay(bundle, suggestions = []) {
         e[f] = clean(f, v); e.jira_key = jiraKey(e.jira, e.jira_url);
         if (e.status === "Open" || e.status === "Done") e.status = legacyStage(e);
       }
+    } else if (op.type === "group" && byId.has(op.id) && op.id !== op.into && !byId.get(op.id).dup_of) {
+      const e = byId.get(op.id); e.dup_of = op.into; e.extra = { ...e.extra, same: !!op.same };
+    } else if (op.type === "more" && byId.has(op.id) && Array.isArray(op.more)) {
+      const e = byId.get(op.id); e.extra = { ...e.extra, more: op.more.map(cleanMore).slice(0, 200) };
     }
   }
   for (const op of bundle.ops || []) if (op.type === "suggest" && op.item?.sid) suggestions.push(cleanSuggest(op.item));
@@ -316,23 +350,37 @@ export async function onRequestPost(ctx) {
     const e = await update(env.DB, clip(body.id, 64), body.set, by, at);
     return e ? json({ entry: e }) : json({ error: "not found" }, 404);
   }
-  if (body.action === "merge") {
-    const dup = await getOne(env.DB, clip(body.id, 64));
-    const into = String(body.into ?? "").replace(/^#/, "");
-    const row = /^\d+$/.test(into) ? await env.DB.prepare("SELECT id FROM tracker WHERE n = ?").bind(+into).first() : { id: into };
-    const target = row && (await getOne(env.DB, row.id));
-    if (!dup || !target) return json({ error: "Entry not found. Check the # number." }, 404);
-    if (dup.id === target.id) return json({ error: "An entry can't be merged into itself." }, 400);
-    const links = [...new Set([...(target.links || []), dup.url || "", ...(dup.links || [])].filter((l) => l && l !== target.url))];
-    const tags = [...new Set([...(target.tags || []).filter((t) => t !== "Single report"), "Multiple reports"])];
-    const note = `Merged #${dup.n}: ${dup.title}`;
-    await update(env.DB, target.id, { links, tags, notes: [target.notes, note].filter(Boolean).join("\n\n") }, by, at);
-    // Report count lives in extra.reports when some reports have no link (rows folded together at import).
-    const extra = { ...target.extra, reports: reportsOf(target) + reportsOf(dup) };
-    await env.DB.prepare("UPDATE tracker SET extra = ? WHERE id = ?").bind(JSON.stringify(extra), target.id).run();
-    const t2 = await getOne(env.DB, target.id);
-    const d2 = await update(env.DB, dup.id, { status: "Closed", dup_of: target.id, tags: [...new Set([...(dup.tags || []), "Duplicate"])] }, by, at);
-    return json({ entry: d2, into: t2 });
+  if (body.action === "group") {
+    const child = await getOne(env.DB, clip(body.id, 64));
+    const root = await rootOf(env.DB, body.into);
+    if (!child || !root) return json({ error: "Entry not found. Check the # number." }, 404);
+    if (child.id === root.id) return json({ error: "That's the same group already." }, 400);
+    // the child's own group (if it led one) joins too, so groups stay one level deep
+    const { results: kids } = await env.DB.prepare("SELECT id FROM tracker WHERE dup_of = ?").bind(child.id).all();
+    if (kids.length) await env.DB.prepare("UPDATE tracker SET dup_of = ? WHERE dup_of = ?").bind(root.id, child.id).run();
+    const e = await update(env.DB, child.id, { dup_of: root.id, status: root.status }, by, at);
+    e.extra = { ...e.extra, same: !!body.same };
+    await setExtra(env.DB, e.id, e.extra);
+    let r = root;
+    if (!body.same && !(root.tags || []).includes("Multiple reports"))
+      r = await update(env.DB, root.id, { tags: [...(root.tags || []).filter((t) => t !== "Single report"), "Multiple reports"] }, by, at);
+    const moved = kids.length ? (await env.DB.prepare(`SELECT * FROM tracker WHERE id IN (${kids.map(() => "?").join(", ")})`).bind(...kids.map((k) => k.id)).all()).results.map(fromRow) : [];
+    return json({ entry: e, into: r, moved });
+  }
+  if (body.action === "ungroup" || body.action === "same") {
+    const e = await getOne(env.DB, clip(body.id, 64));
+    if (!e || !e.dup_of) return json({ error: "That report isn't in a group." }, 404);
+    if (body.action === "same") {
+      e.extra = { ...e.extra, same: !!body.same };
+      await setExtra(env.DB, e.id, e.extra);
+      return json({ entry: e });
+    }
+    const root = await getOne(env.DB, e.dup_of);
+    const e2 = await update(env.DB, e.id, { dup_of: "", ...(root ? { status: root.status } : {}) }, by, at);
+    const { same, ...extra } = e2.extra || {};
+    e2.extra = extra;
+    await setExtra(env.DB, e2.id, extra);
+    return json({ entry: e2 });
   }
   if (body.action === "suggest_add" || body.action === "suggest_merge" || body.action === "suggest_dismiss") {
     const items = await openSuggestions(env.DB, body.sids);
@@ -347,20 +395,17 @@ export async function onRequestPost(ctx) {
       const input = body.entry || {};
       if (!clip(input.title, 1000)) return json({ error: "A title is needed." }, 400);
       const e = fresh({ ...input, id: "", url: input.url || urls[0] || "", links: [...new Set([...(input.links || []), ...urls.slice(1)])],
-        status: input.status || "Triage", notes: [input.notes, "From Suggested:\n" + items.map(reportLine).join("\n")].filter(Boolean).join("\n\n"),
-        extra: { ...(input.extra || {}), reports: items.length, suggested: done } }, by, at);
+        status: input.status || "Triage", notes: [input.notes, items[0].english && items[0].text ? "Original: " + items[0].text : ""].filter(Boolean).join("\n\n"),
+        extra: { ...(input.extra || {}), reports: items.length, suggested: done, more: items.slice(1).map(moreOf) } }, by, at);
       await env.DB.batch([insertStmt(env.DB, e), closeSuggestions(env.DB, items, "added", e.id, by, at)]);
       return json({ entry: await getOne(env.DB, e.id), done });
     }
-    const into = String(body.into ?? "").replace(/^#/, "");
-    const row = /^\d+$/.test(into) ? await env.DB.prepare("SELECT id FROM tracker WHERE n = ?").bind(+into).first() : { id: into };
-    const target = row && (await getOne(env.DB, row.id));
+    const target = await rootOf(env.DB, body.into);
     if (!target) return json({ error: "Entry not found. Check the # number." }, 404);
     const links = [...new Set([...(target.links || []), ...urls].filter((l) => l && l !== target.url))];
     const tags = [...new Set([...(target.tags || []).filter((t) => t !== "Single report"), "Multiple reports"])];
-    const note = `+${items.length} from Suggested:\n` + items.map(reportLine).join("\n");
-    await update(env.DB, target.id, { links, tags, notes: [target.notes, note].filter(Boolean).join("\n\n") }, by, at);
-    const extra = { ...target.extra, reports: reportsOf(target) + items.length };
+    await update(env.DB, target.id, { links, tags }, by, at);
+    const extra = { ...target.extra, reports: reportsOf(target) + items.length, more: [...(target.extra?.more || []), ...items.map(moreOf)].slice(-200) };
     await env.DB.batch([env.DB.prepare("UPDATE tracker SET extra = ? WHERE id = ?").bind(JSON.stringify(extra), target.id),
       closeSuggestions(env.DB, items, "merged", target.id, by, at)]);
     return json({ into: await getOne(env.DB, target.id), done });

@@ -178,12 +178,13 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
   .stages{gap:8px}.stage{padding:10px 12px}.stage .big{font-size:20px}
   .detail{padding:12px}
   .foot .acts{margin-left:0}
+  .line .rdate{min-width:0}
 }
 /* Suggested */
 .badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--teal);color:var(--on-teal);font:700 12px/20px var(--font-display);text-align:center}
 .badge:empty{display:none}
 #sugbtn[aria-pressed="true"]{background:var(--fill-hover);box-shadow:inset 0 0 0 1px var(--teal-ink)}
-.sug #stages,.sug #sort,.sug .frow,.sug #more-filters,.sug #extra-filters,.sug #csv{display:none!important}
+.sug #stages,.sug #sort,.sug #modes,.sug .frow,.sug #more-filters,.sug #extra-filters,.sug #csv{display:none!important}
 .tag.match{background:var(--teal-wash);color:var(--teal-ink)}
 .sstats{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
 .sacts{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -194,6 +195,19 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 .rtop .x{margin-left:auto;height:28px;padding:0 6px}
 .rtxt{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .rorig{font-size:13px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;border-left:2px solid var(--line);padding-left:10px}
+/* groups and the each-report view */
+.dates{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.dates input{height:36px;border-radius:10px;border:0;box-shadow:inset 0 0 0 1px var(--line-strong);background:var(--surface-2);color:var(--ink);padding:0 10px;font:14px var(--font-sans);color-scheme:dark}
+.tag.same{background:var(--surface-2);color:var(--muted);font-weight:400;box-shadow:inset 0 0 0 1px var(--line)}
+.tag.st{background:var(--surface-2);font-weight:400}
+.tag.st::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--st)}
+.rep.child{box-shadow:inset 3px 0 0 var(--line-strong)}
+.rep.dim{opacity:.7}
+.rep .racts{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.rep .racts .btn{height:30px;padding:0 10px;font-size:13px}
+.rhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.rhead .sub{font-size:13px}
+.line .rdate{flex:none;min-width:86px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 [hidden]{display:none!important}
 @media (hover:hover) and (pointer:fine){
   .tab:not([aria-selected="true"]):hover{color:var(--ink)}
@@ -225,7 +239,6 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
     <div class="brand"><div class="mark"><span data-ic="wrench" data-s="22"></span></div><div><h1>Feedback tracker</h1><div class="bsub">Player bugs, feedback and requests, with their Jira tickets</div></div></div>
     <div class="hright">
       <span class="mode"><span class="pulse" id="mode-dot"></span><span id="mode">Loading…</span></span>
-      <a class="qlink" href="/trends/">Trends</a><a class="qlink" href="/inbox/">Inbox</a><span class="qlink here" aria-current="page">Tracker</span>
     </div>
   </header>
 
@@ -244,13 +257,16 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 
   <div class="tools">
     <label class="search"><span data-ic="magnifying-glass"></span><input id="q" type="search" placeholder="Search text, notes, ORB keys, #numbers" aria-label="Search"></label>
-    <div class="seg" id="sort" role="group" aria-label="Sort">
-      <button class="chipbtn" data-sort="priority" aria-pressed="true">Priority</button>
-      <button class="chipbtn" data-sort="reports" aria-pressed="false">Reports</button>
-      <button class="chipbtn" data-sort="posted" aria-pressed="false">Newest</button>
-      <button class="chipbtn" data-sort="changed" aria-pressed="false">Changed</button>
+    <div class="seg" id="modes" role="group" aria-label="Show">
+      <button class="chipbtn" data-mode="grouped" aria-pressed="true">Grouped</button>
+      <button class="chipbtn" data-mode="each" aria-pressed="false">Each report</button>
     </div>
+    <div class="seg" id="sort" role="group" aria-label="Sort"></div>
   </div>
+  <div class="frow"><span class="lbl">Dates</span><div class="dates">
+    <div class="filters" id="ranges" role="group" aria-label="Date range"></div>
+    <span id="custom" hidden><input type="date" id="from" aria-label="From"> to <input type="date" id="to" aria-label="To"></span>
+  </div></div>
   <div class="frow"><span class="lbl">Area</span><div class="filters" id="areas" role="group" aria-label="Area"></div></div>
   <button class="btn ghost sm" id="more-filters" aria-expanded="false">More filters</button>
   <div id="extra-filters" hidden>
@@ -324,7 +340,7 @@ const store = { get(k) { try { return localStorage.getItem(k) || ""; } catch { r
 
 const S = { entries: [], db: false, kinds: [], priorities: [], labels: [], sources: [], platforms: [], statuses: [], hints: {}, jiraBase: "",
   kind: "all", stage: "", area: new Set(), label: new Set(), source: new Set(), platform: new Set(), q: "", sort: "priority", open: new Set(), full: new Set(), logs: {},
-  view: "board", suggestions: [], sopen: new Set() };
+  view: "board", suggestions: [], sopen: new Set(), mode: "grouped", range: "all", from: "", to: "", ropen: new Set(), byId: new Map(), kids: new Map() };
 const DONE = "Closed";
 const fmt = (d) => { if (!d) return ""; const t = new Date(d.length === 10 ? d + "T12:00:00" : d); return isNaN(t) ? d : t.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); };
 const reports = (e) => Math.max(1 + (e.links || []).length, +(e.extra && e.extra.reports) || 0);
@@ -337,6 +353,55 @@ const ageDays = (e) => { const t = Date.parse((e.posted_at || e.added_at || "").
 const KIND_TAG = { Bug: ["bug", "bug-beetle", "Bug"], Feedback: ["fb", "lightbulb", "FB"], Request: ["req", "sparkle", "Req"] };
 const ktag = (k) => { const [c, i, t] = KIND_TAG[k] || KIND_TAG.Feedback; return `<span class="ktag ${c}">${ic(i, 13)}${t}</span>`; };
 const stageKey = (s) => "st-" + String(s).replace(/[^a-z]+/gi, "-").toLowerCase();
+
+// ---- groups: one entry per report, children point at the group's first entry with dup_of ----
+function indexGroups() {
+  S.byId = new Map(S.entries.map((e) => [e.id, e]));
+  S.kids = new Map();
+  for (const e of S.entries) if (isChild(e)) { if (!S.kids.has(e.dup_of)) S.kids.set(e.dup_of, []); S.kids.get(e.dup_of).push(e); }
+}
+const isChild = (e) => !!(e.dup_of && e.dup_of !== e.id && S.byId.has(e.dup_of));
+const rootOf = (e) => (isChild(e) ? S.byId.get(e.dup_of) : e);
+const members = (e) => [e, ...(S.kids.get(e.id) || [])];
+const same = (m, root) => m !== root && !!(m.extra && m.extra.same);
+const day = (d) => String(d || "").slice(0, 10);
+// Discord message ids carry their timestamp, so a bare Discord link still has a date
+const snowDate = (u) => { const m = String(u || "").match(/discord\.com\/channels\/\d+\/\d+\/(\d{17,20})/); return m ? new Date(Number(BigInt(m[1]) >> 22n) + 1420070400000).toISOString().slice(0, 10) : ""; };
+const srcOfUrl = (u) => /discord\.com/.test(u) ? "Discord" : /reddit\.com/.test(u) ? "Reddit" : /steamcommunity\.com\/.*recommended/.test(u) ? "Steam review" : /steamcommunity\.com/.test(u) ? "Steam forum" : "";
+// The reports one entry holds: its own post, extra reports folded into it (extra.more), and bare extra links.
+function ownReports(e) {
+  const out = [{ e, k: e.id + ":0", main: true, d: day(e.posted_at) || snowDate(e.url), t: fullText(e), u: safeUrl(e.url), src: e.source }];
+  for (const [i, m] of ((e.extra && e.extra.more) || []).entries()) out.push({ e, k: `${e.id}:m${i}`, d: day(m.d) || snowDate(m.u), t: m.t, o: m.o, u: safeUrl(m.u), src: m.src || srcOfUrl(m.u || ""), lang: m.lang, rsame: !!m.same });
+  const seen = new Set(out.map((r) => r.u).filter(Boolean));
+  for (const [i, l] of (e.links || []).entries()) {
+    const u = safeUrl(l); if (!u || seen.has(u)) continue; seen.add(u);
+    out.push({ e, k: `${e.id}:l${i}`, d: snowDate(u), t: "", u, src: srcOfUrl(u) });
+  }
+  const left = reports(e) - out.length;
+  if (left > 0) out.push({ e, k: e.id + ":x", d: "", t: "", n: left, src: "" });
+  return out;
+}
+function groupReports(root) {
+  if (!groupReports.c.has(root.id)) groupReports.c.set(root.id, members(root).flatMap((m) => ownReports(m).map((r) => ({ ...r, root, same: same(m, root) || !!r.rsame }))));
+  return groupReports.c.get(root.id);
+}
+groupReports.c = new Map();
+// "Single report" / "Multiple reports" follow the group's real count, whatever the stored label says
+const COUNT_TAGS = ["Single report", "Multiple reports"];
+const shownTags = (e) => { const t = (e.tags || []).filter((x) => !COUNT_TAGS.includes(x)), had = (e.tags || []).some((x) => COUNT_TAGS.includes(x)), n = counted(groupReports(e));
+  return n > 1 ? [...t, "Multiple reports"] : had ? [...t, "Single report"] : t; };
+const counted = (rs) => rs.reduce((n, r) => n + (r.same ? 0 : r.n || 1), 0);
+const rangeOn = () => !!(S.from || S.to);
+const inRange = (d) => !rangeOn() || (!!d && (!S.from || d >= S.from) && (!S.to || d <= S.to));
+const groupCount = (root) => counted(groupReports(root).filter((r) => inRange(r.d)));
+const lastDate = (root) => groupReports(root).map((r) => r.d).filter(inRange).sort().pop() || "";
+const RANGES = [["all", "All time"], ["7", "7 days"], ["30", "30 days"], ["90", "90 days"], ["custom", "Custom"]];
+function setRange(v) {
+  S.range = v;
+  if (v === "all") S.from = S.to = "";
+  else if (v !== "custom") { S.from = new Date(Date.now() - (+v - 1) * 864e5).toISOString().slice(0, 10); S.to = ""; }
+  else { S.from = $("#from").value; S.to = $("#to").value; }
+}
 
 async function load(again = 0) {
   let d;
@@ -357,6 +422,7 @@ async function load(again = 0) {
   b.hidden = S.db;
   if (!S.db) b.innerHTML = `${ic("warning")}<div><b>Saving is not switched on here.</b> Entries show, but changes on this page can't be saved until the tracker database is connected to this site.</div>`;
   $("#add").disabled = !S.db;
+  indexGroups(); groupReports.c.clear();
   render();
   if (d.pending && again < 60) setTimeout(() => load(again + 1), 1200);
 }
@@ -365,17 +431,20 @@ function matches(e, skip) {
   const q = S.q.trim().toLowerCase();
   return (S.kind === "all" || e.kind === S.kind)
     && (skip === "area" || !S.area.size || S.area.has(areaOf(e)))
-    && (!S.label.size || (e.tags || []).some((t) => S.label.has(t)))
+    && (!S.label.size || shownTags(e).some((t) => S.label.has(t)))
     && (!S.source.size || S.source.has(e.source || "Unknown"))
     && (!S.platform.size || (e.platforms || []).some((p) => S.platform.has(p)))
-    && (!q || [e.title, e.summary, e.notes, e.jira, e.jira_key, e.where, e.source, e.added_by, areaOf(e), "#" + e.n, ...(e.tags || []), ...(e.platforms || [])].join(" ").toLowerCase().includes(q));
+    && (!q || members(e).some((m) => hay(m).includes(q)))
+    && (!rangeOn() || groupReports(e).some((r) => inRange(r.d)));
 }
+const hay = (e) => [e.title, e.summary, e.notes, e.jira, e.jira_key, e.where, e.source, e.added_by, areaOf(e), "#" + e.n, ...(e.tags || []), ...(e.platforms || []),
+  ...((e.extra && e.extra.more) || []).flatMap((m) => [m.t, m.o])].join(" ").toLowerCase();
 function sorted(xs) {
   const posted = (e) => e.posted_at || (e.added_at || "").slice(0, 10);
   const cmp = {
-    priority: (a, b) => prioNum(b) - prioNum(a) || reports(b) - reports(a) || posted(b).localeCompare(posted(a)),
-    reports: (a, b) => reports(b) - reports(a) || prioNum(b) - prioNum(a),
-    posted: (a, b) => posted(b).localeCompare(posted(a)),
+    priority: (a, b) => prioNum(b) - prioNum(a) || groupCount(b) - groupCount(a) || lastDate(b).localeCompare(lastDate(a)),
+    reports: (a, b) => groupCount(b) - groupCount(a) || prioNum(b) - prioNum(a),
+    posted: (a, b) => lastDate(b).localeCompare(lastDate(a)) || posted(b).localeCompare(posted(a)),
     changed: (a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""),
   }[S.sort];
   return xs.sort((a, b) => cmp(a, b) || b.n - a.n);
@@ -394,7 +463,14 @@ function render() {
   $("#sugbtn").setAttribute("aria-pressed", sug);
   $("#sugn").textContent = S.suggestions.length || "";
   if (sug) return renderSuggest();
-  const all = S.entries;
+  const each = S.mode === "each";
+  document.querySelectorAll("#modes .chipbtn").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === S.mode));
+  const sorts = each ? [["new", "Newest"], ["old", "Oldest"]] : [["priority", "Priority"], ["reports", "Reports"], ["posted", "Newest"], ["changed", "Changed"]];
+  if (!sorts.some(([k]) => k === S.sort)) S.sort = sorts[0][0];
+  $("#sort").innerHTML = sorts.map(([k, l]) => `<button class="chipbtn" data-sort="${k}" aria-pressed="${S.sort === k}">${l}</button>`).join("");
+  $("#ranges").innerHTML = RANGES.map(([k, l]) => `<button class="chipbtn" data-range="${k}" aria-pressed="${S.range === k}">${l}</button>`).join("");
+  $("#custom").hidden = S.range !== "custom";
+  const all = S.entries.filter((e) => !isChild(e));
   const inView = all.filter((e) => matches(e));
   // next-step board: counts follow the type, area, label, source and search filters
   $("#stages").innerHTML = S.statuses.map((s) => {
@@ -408,13 +484,14 @@ function render() {
   const areaScope = scope.filter((e) => matches(e, "area"));
   chipRow($("#areas"), AREA_NAMES.filter((a) => areaScope.some((e) => areaOf(e) === a) || S.area.has(a)), S.area, "area", (v) => areaScope.filter((e) => areaOf(e) === v).length);
   const sc2 = scope.filter((e) => S.kind === "all" || e.kind === S.kind);
-  chipRow($("#labels"), S.labels, S.label, "label", (v) => sc2.filter((e) => (e.tags || []).includes(v)).length);
+  chipRow($("#labels"), S.labels, S.label, "label", (v) => sc2.filter((e) => shownTags(e).includes(v)).length);
   const srcs = [...S.sources, ...(sc2.some((e) => !e.source) ? ["Unknown"] : [])];
   chipRow($("#sources"), srcs.filter((v) => sc2.some((e) => (e.source || "Unknown") === v) || S.source.has(v)), S.source, "source", (v) => sc2.filter((e) => (e.source || "Unknown") === v).length);
   chipRow($("#platforms"), S.platforms.filter((v) => sc2.some((e) => (e.platforms || []).includes(v)) || S.platform.has(v)), S.platform, "platform", (v) => sc2.filter((e) => (e.platforms || []).includes(v)).length);
   const nf = S.label.size + S.source.size + S.platform.size;
   $("#more-filters").textContent = nf ? `More filters (${nf} on)` : "More filters";
 
+  if (each) return renderEach(scope);
   // one group per next step (or just the chosen one)
   const groups = (S.stage ? [S.stage] : S.statuses.filter((s) => s !== DONE)).map((s) => [s, sorted(inView.filter((e) => e.status === s))]);
   const html = groups.filter(([, xs]) => xs.length || S.stage).map(([s, xs]) => {
@@ -439,7 +516,7 @@ function row(e) {
       <span class="ltitle">${esc(e.title)}</span>
       <span class="lmeta">
         <span class="tag area">${esc(areaOf(e))}</span>
-        ${reports(e) > 1 ? `<span class="tag">×${reports(e)}</span>` : ""}
+        ${groupCount(e) > 1 ? `<span class="tag" title="${esc(rangeOn() ? "reports in these dates" : "reports from different players")}">×${groupCount(e)}</span>` : ""}
         ${e.jira_key ? `<span class="tag jira">${esc(e.jira_key)}</span>` : ""}
         <span class="age">${age === null ? "" : age + "d"}</span>
       </span>
@@ -450,34 +527,86 @@ function row(e) {
 
 function detail(e) {
   const url = safeUrl(e.url), jira = jiraHref(e);
-  const links = (e.links || []).map(safeUrl).filter(Boolean);
   const shots = (e.shots || []).map(safeUrl).filter(Boolean);
   const log = S.logs[e.id];
   const jtitle = e.jira && e.jira_key ? e.jira.replace(e.jira_key, "").replace(/^[\s:–-]+/, "") : "";
-  const dup = e.dup_of && S.entries.find((x) => x.id === e.dup_of);
   return `<div class="detail">
     <div class="top">
       ${e.priority ? `<span class="tag p${prioNum(e)}">${esc(e.priority)}</span>` : ""}
       ${jira ? `<a class="tag jira" href="${esc(jira)}" target="_blank" rel="noopener">${esc(e.jira_key || "Jira")}${e.jira_status ? " · " + esc(e.jira_status) : ""}${ic("arrow-square-out", 13)}</a>` : ""}
-      ${(e.tags || []).map((t) => `<span class="tag lbl-t">${esc(t)}</span>`).join("")}
+      ${shownTags(e).map((t) => `<span class="tag lbl-t">${esc(t)}</span>`).join("")}
       ${(e.platforms || []).length ? `<span class="tag plat">${esc(e.platforms.join(", "))}</span>` : ""}
       <span class="when">${e.posted_at ? "Posted " + esc(fmt(e.posted_at)) : "Added " + esc(fmt(e.added_at))}</span></div>
     ${url ? `<a class="qlink open-src" href="${esc(url)}" target="_blank" rel="noopener">Open the original post${ic("arrow-square-out", 14)}</a>` : ""}
     ${e.summary ? `<div class="ptxt">${esc(rest(e) ? e.summary : "")}</div>` : ""}
     ${e.source || e.where ? `<div class="where">${ic(SRC_ICON[e.source] || "tag", 13)} ${esc([e.source, e.where].filter(Boolean).join(" · "))}</div>` : ""}
     ${jtitle ? `<div class="jtxt"><b>${esc(e.jira_key)}</b> ${esc(jtitle)}</div>` : ""}
-    ${dup ? `<div class="jtxt">Duplicate of <a class="qlink inl" href="#${esc(dup.id)}">#${esc(dup.n)} ${esc(dup.title)}</a></div>` : ""}
     ${e.notes ? `<div class="notes"><span class="lbl">Note</span>${esc(e.notes)}</div>` : ""}
-    ${links.length ? `<div class="links">${links.map((l, i) => `<a class="tag" href="${esc(l)}" target="_blank" rel="noopener">Report ${i + 2}${ic("arrow-square-out", 13)}</a>`).join("")}</div>` : ""}
+    ${reportsBlock(e)}
     ${shots.length ? `<div class="shots">${shots.map((s) => `<a href="${esc(s)}" target="_blank" rel="noopener"><img src="${esc(s)}" alt="Screenshot" loading="lazy"></a>`).join("")}</div>` : ""}
     ${S.db ? `<div class="moveto"><span class="lbl">Move to</span><div class="filters">${S.statuses.map((s) =>
       `<button class="chipbtn" data-move="${esc(e.id)}" data-to="${esc(s)}" aria-pressed="${s === e.status}">${esc(s)}</button>`).join("")}</div></div>` : ""}
     ${log ? `<div class="log">${log.length ? log.map((l) => `<div>${esc(fmt(l.at))} · <b>${esc(l.by || "Someone")}</b> changed ${esc(l.field.replace("_", " ").replace("tags", "labels").replace("status", "next step"))}${["status", "priority", "area"].includes(l.field) ? ` to <b>${esc(JSON.parse(l.new || '""'))}</b>` : ""}</div>`).join("") : "No changes since it was added."}</div>` : ""}
     <div class="foot"><span>${esc(e.added_by || "Added")} ${esc(fmt(e.added_at))}${e.updated_by && e.updated_by !== e.added_by ? ` · changed ${esc(fmt(e.updated_at))} by ${esc(e.updated_by)}` : ""}</span>
       ${S.db ? `<span class="acts">
-        <span class="merge"><input data-mergein="${esc(e.id)}" inputmode="numeric" placeholder="#" aria-label="Merge into entry number"><button class="btn sm ghost" data-merge="${esc(e.id)}">Merge into</button></span>
+        <span class="merge"><input data-mergein="${esc(e.id)}" inputmode="numeric" placeholder="#" aria-label="Group with entry number"><button class="btn sm ghost" data-merge="${esc(e.id)}" title="Same thing reported by another player">Group with</button></span>
         <button class="btn sm ghost" data-log="${esc(e.id)}">${log ? "Hide history" : "History"}</button><button class="btn sm" data-edit="${esc(e.id)}">Edit</button></span>` : ""}</div>
   </div>`;
+}
+
+// Every report in a group, newest first, each with its own date, text and link.
+function reportsBlock(root) {
+  const rs = groupReports(root);
+  if (rs.length < 2) return "";
+  const n = counted(rs), reps = rs.filter((r) => r.same).length;
+  const dates = rs.map((r) => r.d).filter(Boolean).sort();
+  const sorted = [...rs].sort((a, b) => (b.d || "").localeCompare(a.d || ""));
+  const span = dates.length ? (dates[0] === dates[dates.length - 1] ? fmt(dates[0]) : `${fmt(dates[0])} to ${fmt(dates[dates.length - 1])}`) : "";
+  return `<div class="reps">
+    <div class="rhead"><span class="lbl">Reports</span><span class="sub">${n} from different players${reps ? `, ${reps} repeat${reps > 1 ? "s" : ""} by the same player` : ""}${span ? " · " + esc(span) : ""}</span></div>
+    ${sorted.map((r) => repCard(r)).join("")}
+  </div>`;
+}
+function repCard(r, inEach) {
+  const m = r.e, child = m !== r.root;
+  if (r.n) return `<div class="rep dim"><div class="rtop">${r.n} more report${r.n > 1 ? "s" : ""} without a link or date${child ? ` · from #${esc(m.n)}` : ""}</div></div>`;
+  return `<div class="rep ${child ? "child" : ""} ${r.same ? "dim" : ""}">
+    <div class="rtop">${r.src ? `<span class="tag">${esc(r.src)}</span>` : ""}${r.lang && r.lang !== "english" ? `<span>${esc(langName(r.lang))}</span>` : ""}
+      <span>${esc(r.d ? fmt(r.d) : "No date")}</span>${child ? `<span class="num">#${esc(m.n)}</span>` : ""}${child && r.main && m.jira_key ? `<a class="tag jira" href="${esc(jiraHref(m))}" target="_blank" rel="noopener">${esc(m.jira_key)}</a>` : ""}
+      ${r.same ? `<span class="tag same">Same player again</span>` : ""}
+      ${r.u ? `<a class="qlink inl" href="${esc(r.u)}" target="_blank" rel="noopener">Open${ic("arrow-square-out", 13)}</a>` : ""}</div>
+    ${r.t && !(r.main && !child && !inEach) ? `<div class="rtxt">${esc(r.t)}</div>` : r.main && !child && !inEach ? `<div class="sub">The entry's own post (above)</div>` : ""}
+    ${r.o ? `<div class="rorig">${esc(r.o)}</div>` : ""}
+    ${S.db && child && r.main && !inEach ? `<div class="racts">
+      <button class="btn ghost" data-same="${esc(m.id)}" data-v="${r.same ? "" : "1"}">${r.same ? "Different player" : "Same player again"}</button>
+      <button class="btn ghost" data-ungroup="${esc(m.id)}">Take out of group</button>
+      <button class="btn ghost" data-edit="${esc(m.id)}">Edit</button></div>` : ""}
+  </div>`;
+}
+// Each report on its own row, by date: the grouped entries pulled apart again.
+function renderEach(scope) {
+  const roots = scope.filter((e) => matches(e));
+  const q = S.q.trim().toLowerCase();
+  let rs = roots.flatMap(groupReports).filter((r) => !r.n && inRange(r.d) && (!q || hay(r.e).includes(q) || [r.t, r.o].join(" ").toLowerCase().includes(q)));
+  rs.sort((a, b) => (S.sort === "old" ? (a.d || "9999").localeCompare(b.d || "9999") : (b.d || "").localeCompare(a.d || "")) || b.root.n - a.root.n);
+  const counted_ = counted(rs), cap = S.full.has("each") ? rs.length : 60;
+  $("#list").innerHTML = `<section class="group">
+    <div class="ghead"><h2>Each report</h2><span class="n">${rs.length}</span><span class="ghint">${counted_ < rs.length ? `${counted_} from different players · ` : ""}every report on its own row, by the date it was posted</span></div>
+    <div class="rows">${rs.slice(0, cap).map((r) => {
+      const open = S.ropen.has(r.k);
+      return `<article class="item ${open ? "is-open" : ""}">
+        <button class="line" data-ropen="${esc(r.k)}" aria-expanded="${open}">
+          <span class="rdate">${esc(r.d ? fmt(r.d) : "No date")}</span>
+          ${ktag(r.root.kind)}
+          <span class="num">#${esc(r.root.n)}</span>
+          <span class="ltitle">${esc(r.main ? r.e.title : r.t || r.root.title)}</span>
+          <span class="lmeta">${r.same ? `<span class="tag same">Repeat</span>` : ""}${r.src ? `<span class="tag area">${esc(r.src)}</span>` : ""}<span class="tag st ${stageKey(r.root.status)}">${esc(r.root.status)}</span></span>
+        </button>
+        ${open ? `<div class="detail">${repCard(r, true)}${r.e !== r.root || !r.main ? `<div class="jtxt">In group <a class="qlink inl" href="#${esc(r.root.id)}">#${esc(r.root.n)} ${esc(r.root.title)}</a> · ${groupCount(r.root)} report${groupCount(r.root) > 1 ? "s" : ""}</div>` : groupCount(r.root) > 1 ? `<div class="jtxt"><a class="qlink inl" href="#${esc(r.root.id)}">Open the group #${esc(r.root.n)}</a> · ${groupCount(r.root)} reports</div>` : `<div class="jtxt"><a class="qlink inl" href="#${esc(r.root.id)}">Open #${esc(r.root.n)}</a></div>`}</div>` : ""}
+      </article>`;
+    }).join("") || `<div class="empty sm">No reports in these dates with these filters.</div>`}</div>
+    ${rs.length > cap ? `<button class="btn ghost sm" data-full="each">Show all ${rs.length}</button>` : ""}
+  </section>`;
 }
 
 // ---- Suggested: reports the morning run sorted and translated, waiting for one tap ----
@@ -516,7 +645,7 @@ function sugGroups(xs) {
     g.area = g.items[0].area || "";
     // likely tracker entries: the issue line against entry titles (cheap word overlap, no Claude)
     const q = toks(g.issue);
-    g.matches = q.size ? S.entries.filter((e) => e.status !== DONE).map((e) => {
+    g.matches = q.size ? S.entries.filter((e) => e.status !== DONE && !isChild(e)).map((e) => {
       const et = entryToks(e), n = overlap(q, et);
       return [e, n, n / Math.sqrt(q.size * Math.max(et.size, 1))];
     }).filter(([, n, sc]) => n >= 2 && sc >= 0.3).sort((a, b) => b[2] - a[2]).slice(0, 3).map(([e]) => e) : [];
@@ -605,16 +734,20 @@ function sugEntry(g) {
 }
 
 function highlight() {
-  const id = decodeURIComponent(location.hash.slice(1));
+  let id = decodeURIComponent(location.hash.slice(1));
   if (!id || highlight.done === id) return;
-  const e = S.entries.find((x) => x.id === id);
-  if (!e) return;
-  highlight.done = id;
-  Object.assign(S, { kind: "all", stage: e.status, q: "" }); $("#q").value = ""; S.area.clear(); S.label.clear(); S.source.clear(); S.platform.clear(); S.open.add(id);
+  const hit = S.entries.find((x) => x.id === id);
+  if (!hit) return;
+  const e = rootOf(hit), id0 = id;
+  id = e.id; highlight.done = id0;
+  Object.assign(S, { kind: "all", stage: e.status, q: "", mode: "grouped", view: "board" }); $("#q").value = ""; S.area.clear(); S.label.clear(); S.source.clear(); S.platform.clear(); S.open.add(id);
   render();
   const el = document.getElementById(id);
   if (el) { el.classList.add("hl"); el.scrollIntoView({ block: "start" }); }
 }
+
+// open an entry wherever it sits (its stage, grouped view), e.g. the group something just joined
+function goTo(id) { highlight.done = ""; if (location.hash.slice(1) === id) highlight(); else location.hash = id; }
 
 // ---- saving ----
 function whoAmI() {
@@ -627,11 +760,12 @@ async function post(body) {
   const d = await r.json();
   if (!r.ok) throw new Error(d.error || "Not saved");
   if (d.done) S.suggestions = S.suggestions.filter((x) => !d.done.includes(x.sid));
-  for (const x of [d.entry, d.into].filter(Boolean)) {
+  for (const x of [d.entry, d.into, ...(d.moved || [])].filter(Boolean)) {
     const i = S.entries.findIndex((y) => y.id === x.id);
     if (i >= 0) S.entries[i] = x; else S.entries.unshift(x);
     delete S.logs[x.id];
   }
+  indexGroups(); groupReports.c.clear();
   return d;
 }
 
@@ -704,10 +838,13 @@ async function save(ev) {
 function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 2600); }
 
 function csv() {
-  const cols = ["n", "kind", "status", "priority", "area", "title", "summary", "posted_at", "url", "source", "where", "platforms", "tags", "jira", "jira_url", "notes", "links", "added_by", "updated_at", "updated_by"];
+  const cols = ["n", "group", "same_player", "reports", "kind", "status", "priority", "area", "title", "summary", "posted_at", "url", "source", "where", "platforms", "tags", "jira", "jira_url", "notes", "links", "added_by", "updated_at", "updated_by"];
   const cell = (v) => { v = Array.isArray(v) ? v.join(", ") : String(v ?? ""); return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
-  const xs = sorted(S.entries.filter((e) => matches(e) && (S.stage ? e.status === S.stage : true)));
-  const body = [cols.join(","), ...xs.map((e) => cols.map((c) => cell(c === "area" ? areaOf(e) : e[c])).join(","))].join("\n");
+  const xs = sorted(S.entries.filter((e) => !isChild(e) && matches(e) && (S.stage ? e.status === S.stage : true))).flatMap(members);
+  const val = (e, c) => { const r = rootOf(e);
+    return c === "area" ? areaOf(r) : c === "group" ? (r === e ? "" : "#" + r.n) : c === "same_player" ? (same(e, r) ? "yes" : "") : c === "reports" ? (r === e ? groupCount(e) : reports(e))
+      : c === "status" ? r.status : e[c]; };
+  const body = [cols.join(","), ...xs.map((e) => cols.map((c) => cell(val(e, c))).join(","))].join("\n");
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["﻿" + body], { type: "text/csv" })), download: `feedback-tracker-${new Date().toISOString().slice(0, 10)}.csv` });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -724,7 +861,7 @@ document.addEventListener("click", async (ev) => {
   else if (d.source) { toggle(S.source, d.source); render(); }
   else if (d.platform) { toggle(S.platform, d.platform); render(); }
   else if (d.full) { S.full.add(d.full); render(); }
-  else if (d.sort) { S.sort = d.sort; document.querySelectorAll("#sort .chipbtn").forEach((b) => b.setAttribute("aria-pressed", b === t)); render(); }
+  else if (d.sort) { S.sort = d.sort; render(); }
   else if (d.move) {
     const e = S.entries.find((x) => x.id === d.move);
     if (!e || e.status === d.to) return;
@@ -734,11 +871,23 @@ document.addEventListener("click", async (ev) => {
   }
   else if (d.merge) {
     const into = (document.querySelector(`[data-mergein="${CSS.escape(d.merge)}"]`)?.value || "").trim();
-    if (!into) { toast("Type the # of the entry to merge into"); return; }
+    if (!into) { toast("Type the # of the entry to group it with"); return; }
     const by = whoAmI(); if (!by) return;
-    try { const r = await post({ action: "merge", id: d.merge, into, by }); S.open.delete(d.merge); S.open.add(r.into.id); toast(`Merged into #${r.into.n}`); render(); }
+    try { const r = await post({ action: "group", id: d.merge, into, by }); S.open.delete(d.merge); toast(`Grouped with #${r.into.n}`); goTo(r.into.id); }
     catch (err) { toast(err.message); }
   }
+  else if (d.ungroup || d.same !== undefined) {
+    const by = whoAmI(); if (!by) return;
+    try {
+      const r = await post(d.ungroup ? { action: "ungroup", id: d.ungroup, by } : { action: "same", id: d.same, same: !!d.v, by });
+      toast(d.ungroup ? `#${r.entry.n} is its own entry again` : d.v ? "Counted as the same player" : "Counted as another player");
+      if (d.ungroup) S.open.add(r.entry.id);
+      render();
+    } catch (err) { toast(err.message); }
+  }
+  else if (d.mode) { S.mode = d.mode; S.full.delete("each"); render(); }
+  else if (d.range) { setRange(d.range); render(); }
+  else if (d.ropen) { toggle(S.ropen, d.ropen); render(); }
   else if (d.edit) openSheet(S.entries.find((e) => e.id === d.edit));
   else if (d.log) {
     if (S.logs[d.log]) delete S.logs[d.log];
@@ -769,6 +918,7 @@ $("#close").onclick = $("#cancel").onclick = () => $("#sheet").close();
 $("#form").onsubmit = save;
 $("#csv").onclick = csv;
 $("#q").oninput = (e) => { S.q = e.target.value; render(); };
+$("#from").onchange = $("#to").onchange = () => { setRange("custom"); render(); };
 window.addEventListener("hashchange", () => { highlight.done = ""; highlight(); });
 paintIcons();
 load();

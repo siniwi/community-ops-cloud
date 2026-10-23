@@ -2,6 +2,11 @@
 """One-off import of the Feedback tab of "Community Taskforce Dashboard Sheet" (.xlsx export) into tracker ops.
 
   python import_feedback_tab.py <sheet.xlsx> <tracker_seed.json> <out.json>
+  python import_feedback_tab.py --details <sheet.xlsx> <tracker_seed.json> <out.json>
+
+--details writes "more" ops instead: the date, text and link of each row folded into an entry, so the tracker can
+list every report on its own. A row with the same link, or the same day and wording, as an earlier row of its
+entry is marked same (the same player logged twice; counted once).
 
 Columns: Type (Feedback / Feature Request), Summary, Platform, Category, Date, Link. Type becomes kind, Category
 becomes area, Platform becomes platforms. Every entry lands in Backlog. Rows with the same link or the same summary
@@ -172,7 +177,39 @@ def main(path, seed_path, out):
     print(f"{adds} new entries ({merged} rows folded in as extra reports), {updated} existing entries updated")
 
 
+def similar(a, b):
+    wa, wb = set(re.findall(r"\w{3,}", a.lower())), set(re.findall(r"\w{3,}", b.lower()))
+    return bool(wa and wb) and len(wa & wb) / len(wa | wb) >= 0.8
+
+
+def details(path, seed_path, out):
+    seed = json.load(open(seed_path, encoding="utf-8"))["ops"]
+    known = {norm_url(u) for op in seed for u in [op["entry"].get("url")] + (op["entry"].get("links") or []) if u}
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    ops = []
+    for g in group(read_rows(path)):
+        if len(g) < 2 or any(norm_url(u) in known for r in g for u in r["urls"]):
+            continue
+        more = []
+        for i, r in enumerate(g[1:], 1):
+            prev = g[:i]
+            same = any({norm_url(u) for u in r["urls"]} & {norm_url(u) for u in p["urls"]} for p in prev) \
+                or any(r["posted"] and r["posted"] == p["posted"] and similar(r["text"], p["text"]) for p in prev) \
+                or any(r["text"].lower() == p["text"].lower() and (not r["posted"] or r["posted"] == p["posted"]) for p in prev)
+            more.append({"d": r["posted"], "t": r["text"], "u": r["urls"][0] if r["urls"] else "",
+                         "src": source_of(r["urls"][:1], r["where"]), **({"same": True} if same else {})})
+        ops.append({"op_id": f"feedback-tab-details-f-feedback-{g[0]['row']}", "type": "more", "at": now,
+                    "id": f"f-feedback-{g[0]['row']}", "more": more})
+    with open(out, "w", encoding="utf-8") as fh:
+        json.dump({"ops": ops}, fh, ensure_ascii=False)
+    n = sum(len(o["more"]) for o in ops)
+    print(f"{len(ops)} entries get report details ({n} rows, {sum(m.get('same', False) for o in ops for m in o['more'])} same player)")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    if len(sys.argv) == 5 and sys.argv[1] == "--details":
+        details(*sys.argv[2:])
+    elif len(sys.argv) == 4:
+        main(*sys.argv[1:])
+    else:
         sys.exit(__doc__)
-    main(*sys.argv[1:])
