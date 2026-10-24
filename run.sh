@@ -51,8 +51,13 @@ print("trends data:", {k: d.get(k) for k in ("reviews_at", "forum_at", "reddit_a
       "newest forum", newest(d.get("forum", [])), "newest reddit", newest(d.get("reddit", [])), "reviews", len(d.get("reviews", [])))
 PY
 # Feedback tracker page (/tracker/) + the changes added in Claude chat (Drive tracker_ops/ -> tracker/ops.json).
-mkdir -p site/tracker && cp "$ROOT/tracker/index.html" site/tracker/index.html
-step python3 -I "$ROOT/tracker/build_ops.py" "$DROPS/tracker_ops" site/tracker "$ROOT/tracker/seed"
+mkdir -p site/tracker && cp "$ROOT/tracker/index.html" "$ROOT/tracker/links.js" site/tracker/
+# One page menu (Trends, Inbox, Tracker) at the top of every page, and the tracker links on Trends and the Inbox.
+step python3 -I "$ROOT/site_nav.py" site
+# Suggested tab: reports the morning Claude run sorted become suggestions; the rest wait in tracker_intake_todo.json.
+step python3 -I "$ROOT/tracker/intake.py" "$DROPS" "$ROOT/work/intake"
+[ "${PUSH:-0}" = "1" ] && [ -f "$DROPS/tracker_intake_todo.json" ] && step python3 "$ROOT/drive.py" push "$DROPS" tracker_intake_todo.json
+step python3 -I "$ROOT/tracker/build_ops.py" "$DROPS/tracker_ops" site/tracker "$ROOT/tracker/seed" "$ROOT/work/intake"
 # Read-only key for the tracker export below; derived from a secret this job already has, so nothing new to set up.
 TRACKER_KEY="$(printf 'community-ops-tracker:%s' "${GOOGLE_SA_JSON:-}" | sha256sum | cut -c1-64)"
 case "${DEPLOY:-off}" in
@@ -77,6 +82,7 @@ case "${DEPLOY:-off}" in
     # Mirror the tracker to Drive (tracker_export.json) so Claude and the Inbox can read it. Each read also
     # applies pending chat changes in slices, so repeat until none are left.
     if [ "$DEPLOY" = "production" ]; then
+      sleep 20  # a fresh deployment takes a few seconds to reach every edge; until then the previous one answers
       ok=0
       for i in $(seq 1 40); do
         curl -fsS --max-time 30 -H "x-tracker-key: $TRACKER_KEY" https://aimlabs-dash.pages.dev/api/tracker -o "$ROOT/work/tracker.json" || break

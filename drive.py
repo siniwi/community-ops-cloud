@@ -18,7 +18,7 @@ TRACKER_FOLDER = "tracker_ops"                      # tracker changes from Claud
 KEEP = (".json", ".py", ".xml", ".txt")
 # Files the cloud jobs write. Everything else in the folder is read-only for them.
 PUSHABLE = {"reddit_history.json", "player_counts.json", "steam_summary.json", "reviews_history.json",
-            "forum_history.json", "patches.json", "trends_bundle.json", "tracker_export.json"}
+            "forum_history.json", "patches.json", "trends_bundle.json", "tracker_export.json", "tracker_intake_todo.json"}
 FOLDER = "application/vnd.google-apps.folder"
 API = "https://www.googleapis.com/drive/v3/files"
 

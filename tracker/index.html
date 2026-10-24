@@ -178,7 +178,48 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
   .stages{gap:8px}.stage{padding:10px 12px}.stage .big{font-size:20px}
   .detail{padding:12px}
   .foot .acts{margin-left:0}
+  .line .rdate{min-width:0}
 }
+/* Suggested */
+.badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--teal);color:var(--on-teal);font:700 12px/20px var(--font-display);text-align:center}
+.badge:empty{display:none}
+#sugbtn[aria-pressed="true"]{background:var(--fill-hover);box-shadow:inset 0 0 0 1px var(--teal-ink)}
+.sug #stages,.sug #sort,.sug #modes,.sug .frow,.sug #more-filters,.sug #extra-filters,.sug #csv{display:none!important}
+.tag.match{background:var(--teal-wash);color:var(--teal-ink)}
+.sstats{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.sacts{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sacts .btn .mt{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;color:var(--muted)}
+.imp #stages,.imp #sort,.imp #modes,.imp .frow,.imp #more-filters,.imp #extra-filters,.imp #csv,.imp .tools,.imp #kinds{display:none!important}
+.imphead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:4px 0 12px}
+.imphead h2{margin:0;font:700 18px var(--font-display)}
+.impact{display:grid;gap:6px;padding:12px 14px;border-radius:12px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
+.impact .ih{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.impact .th{color:var(--teal-ink);font-weight:700;text-decoration:none}
+.impact .sub{color:var(--muted);font-size:13px}
+.impact .big{font-weight:800;color:var(--down);font-variant-numeric:tabular-nums}
+.impact select{height:32px;max-width:100%;border-radius:8px;border:0;background:var(--fill);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);font:600 13px var(--font-sans);padding:0 8px}
+.tag.pts{background:rgb(255 143 126/.14);color:var(--down)}
+.thf{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 6px 0 10px;border-radius:9px;background:var(--teal-wash);color:var(--teal-ink);font-weight:700;font-size:13px}
+.thf button{border:0;background:none;color:inherit;cursor:pointer;display:grid;place-items:center;width:24px;height:24px;border-radius:6px}
+.reps{display:grid;gap:8px}
+.rep{background:var(--surface);border-radius:12px;padding:10px 14px;display:grid;gap:4px}
+.rtop{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:13px;color:var(--muted)}
+.rtop .x{margin-left:auto;height:28px;padding:0 6px}
+.rtxt{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.rorig{font-size:13px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;border-left:2px solid var(--line);padding-left:10px}
+/* groups and the each-report view */
+.dates{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.dates input{height:36px;border-radius:10px;border:0;box-shadow:inset 0 0 0 1px var(--line-strong);background:var(--surface-2);color:var(--ink);padding:0 10px;font:14px var(--font-sans);color-scheme:dark}
+.tag.same{background:var(--surface-2);color:var(--muted);font-weight:400;box-shadow:inset 0 0 0 1px var(--line)}
+.tag.st{background:var(--surface-2);font-weight:400}
+.tag.st::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--st)}
+.rep.child{box-shadow:inset 3px 0 0 var(--line-strong)}
+.rep.dim{opacity:.7}
+.rep .racts{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.rep .racts .btn{height:30px;padding:0 10px;font-size:13px}
+.rhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.rhead .sub{font-size:13px}
+.line .rdate{flex:none;min-width:86px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 [hidden]{display:none!important}
 @media (hover:hover) and (pointer:fine){
   .tab:not([aria-selected="true"]):hover{color:var(--ink)}
@@ -210,7 +251,6 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
     <div class="brand"><div class="mark"><span data-ic="wrench" data-s="22"></span></div><div><h1>Feedback tracker</h1><div class="bsub">Player bugs, feedback and requests, with their Jira tickets</div></div></div>
     <div class="hright">
       <span class="mode"><span class="pulse" id="mode-dot"></span><span id="mode">Loading…</span></span>
-      <a class="qlink" href="/trends/">Trends</a><a class="qlink" href="/inbox/">Inbox</a><span class="qlink here" aria-current="page">Tracker</span>
     </div>
   </header>
 
@@ -221,6 +261,8 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
   <div class="navrow">
     <div class="tabs" role="tablist" id="kinds"></div>
     <div class="acts">
+      <button class="btn" id="impbtn" aria-pressed="false" title="Which themes cost the Steam review score, and which entries cover them"><span data-ic="gauge"></span>Impact</button>
+      <button class="btn" id="sugbtn" aria-pressed="false"><span data-ic="tray"></span>Suggested<span class="badge" id="sugn"></span></button>
       <button class="btn ghost" id="csv"><span data-ic="download-simple"></span>CSV</button>
       <button class="btn primary" id="add"><span data-ic="plus"></span>Add entry</button>
     </div>
@@ -228,13 +270,17 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 
   <div class="tools">
     <label class="search"><span data-ic="magnifying-glass"></span><input id="q" type="search" placeholder="Search text, notes, ORB keys, #numbers" aria-label="Search"></label>
-    <div class="seg" id="sort" role="group" aria-label="Sort">
-      <button class="chipbtn" data-sort="priority" aria-pressed="true">Priority</button>
-      <button class="chipbtn" data-sort="reports" aria-pressed="false">Reports</button>
-      <button class="chipbtn" data-sort="posted" aria-pressed="false">Newest</button>
-      <button class="chipbtn" data-sort="changed" aria-pressed="false">Changed</button>
+    <div class="seg" id="modes" role="group" aria-label="Show">
+      <button class="chipbtn" data-mode="grouped" aria-pressed="true">Grouped</button>
+      <button class="chipbtn" data-mode="each" aria-pressed="false">Each report</button>
     </div>
+    <div class="seg" id="sort" role="group" aria-label="Sort"></div>
+    <span id="thchip"></span>
   </div>
+  <div class="frow"><span class="lbl">Dates</span><div class="dates">
+    <div class="filters" id="ranges" role="group" aria-label="Date range"></div>
+    <span id="custom" hidden><input type="date" id="from" aria-label="From"> to <input type="date" id="to" aria-label="To"></span>
+  </div></div>
   <div class="frow"><span class="lbl">Area</span><div class="filters" id="areas" role="group" aria-label="Area"></div></div>
   <button class="btn ghost sm" id="more-filters" aria-expanded="false">More filters</button>
   <div id="extra-filters" hidden>
@@ -273,8 +319,9 @@ dialog::backdrop{background:rgb(3 6 12/.72)}
 </dialog>
 <div class="toast" id="toast" role="status" hidden></div>
 
+<script src="links.js"></script>
 <script>
-const ICON = {"chart-line-up":"<path d=\"M236,208a12,12,0,0,1-12,12H32a12,12,0,0,1-12-12V48a12,12,0,0,1,24,0v99l43.51-43.52a12,12,0,0,1,17,0L128,127l43-43H160a12,12,0,0,1,0-24h40a12,12,0,0,1,12,12v40a12,12,0,0,1-24,0V101l-51.51,51.52a12,12,0,0,1-17,0L96,129,44,181v15H224A12,12,0,0,1,236,208Z\"/>","magnifying-glass":"<path d=\"M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z\"/>","warning":"<path d=\"M240.26,186.1,152.81,34.23h0a28.74,28.74,0,0,0-49.62,0L15.74,186.1a27.45,27.45,0,0,0,0,27.71A28.31,28.31,0,0,0,40.55,228h174.9a28.31,28.31,0,0,0,24.79-14.19A27.45,27.45,0,0,0,240.26,186.1Zm-20.8,15.7a4.46,4.46,0,0,1-4,2.2H40.55a4.46,4.46,0,0,1-4-2.2,3.56,3.56,0,0,1,0-3.73L124,46.2a4.77,4.77,0,0,1,8,0l87.44,151.87A3.56,3.56,0,0,1,219.46,201.8ZM116,136V104a12,12,0,0,1,24,0v32a12,12,0,0,1-24,0Zm28,40a16,16,0,1,1-16-16A16,16,0,0,1,144,176Z\"/>","arrow-square-out":"<path d=\"M228,104a12,12,0,0,1-24,0V69l-59.51,59.51a12,12,0,0,1-17-17L187,52H152a12,12,0,0,1,0-24h64a12,12,0,0,1,12,12Zm-44,24a12,12,0,0,0-12,12v64H52V84h64a12,12,0,0,0,0-24H48A20,20,0,0,0,28,80V208a20,20,0,0,0,20,20H176a20,20,0,0,0,20-20V140A12,12,0,0,0,184,128Z\"/>","x":"<path d=\"M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z\"/>","check":"<path d=\"M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z\"/>","chat-circle-text":"<path d=\"M172,108a12,12,0,0,1-12,12H96a12,12,0,0,1,0-24h64A12,12,0,0,1,172,108Zm-12,28H96a12,12,0,0,0,0,24h64a12,12,0,0,0,0-24Zm76-8A108,108,0,0,1,78.77,224.15L46.34,235A20,20,0,0,1,21,209.66l10.81-32.43A108,108,0,1,1,236,128Zm-24,0A84,84,0,1,0,55.27,170.06a12,12,0,0,1,1,9.81l-9.93,29.79,29.79-9.93a12.1,12.1,0,0,1,3.8-.62,12,12,0,0,1,6,1.62A84,84,0,0,0,212,128Z\"/>","steam-logo":"<path d=\"M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm50.16,122.22a40,40,0,1,0-57.25-55.34L92.57,123.6,55.18,86.21a83.55,83.55,0,1,1-9.39,24.55l32.76,32.76a32,32,0,0,0,49.51,37.41ZM117,131.27A40.26,40.26,0,0,0,132.73,147L113.3,162l-.25.2a7.93,7.93,0,0,1-5,1.79,8,8,0,0,1-8-8,7.93,7.93,0,0,1,1.79-5.05l.2-.25ZM152,128a16,16,0,1,1,16-16A16,16,0,0,1,152,128Z\"/>","reddit-logo":"<path d=\"M252,104a36,36,0,0,0-57.4-28.93,145.56,145.56,0,0,0-52.54-14.45l3.8-22.81,15.67,2.61a24,24,0,1,0,3.95-23.67L138,12.16A12,12,0,0,0,124.16,22l-6.38,38.31C97.48,61.62,78,66.7,61.4,75.07a36,36,0,0,0-47.52,53.68A62.87,62.87,0,0,0,12,144c0,23.29,12.65,44.87,35.63,60.78C69.26,219.75,97.8,228,128,228s58.74-8.25,80.37-23.22C231.35,188.87,244,167.29,244,144a62.87,62.87,0,0,0-1.88-15.25A36.16,36.16,0,0,0,252,104Zm-29.91,10.34a12,12,0,0,0-5,15A39.61,39.61,0,0,1,220,144c0,15.18-9,29.75-25.29,41.05C177.05,197.27,153.36,204,128,204s-49-6.73-66.71-18.95C45,173.75,36,159.18,36,144a39.74,39.74,0,0,1,2.84-14.64,12,12,0,0,0-4.93-15A12,12,0,1,1,49.71,97a12,12,0,0,0,15.94,3.18l.22-.13C82.94,89.68,105,84,128,84H128c23,0,45,5.69,62.09,16l.22.13A12,12,0,0,0,206.29,97,11.88,11.88,0,0,1,216,92a12,12,0,0,1,6.09,22.34ZM88,148a20,20,0,1,1,20-20A20,20,0,0,1,88,148Zm100-20a20,20,0,1,1-20-20A20,20,0,0,1,188,128Zm-20.52,40.52a12,12,0,0,1-8,15,111.88,111.88,0,0,1-63,0,12,12,0,0,1,7-23,88.12,88.12,0,0,0,49,0A12,12,0,0,1,167.48,168.52Z\"/>","clock":"<path d=\"M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm0,192a84,84,0,1,1,84-84A84.09,84.09,0,0,1,128,212Zm68-84a12,12,0,0,1-12,12H128a12,12,0,0,1-12-12V72a12,12,0,0,1,24,0v44h44A12,12,0,0,1,196,128Z\"/>","download-simple":"<path d=\"M228,144v64a12,12,0,0,1-12,12H40a12,12,0,0,1-12-12V144a12,12,0,0,1,24,0v52H204V144a12,12,0,0,1,24,0Zm-108.49,8.49a12,12,0,0,0,17,0l40-40a12,12,0,0,0-17-17L140,115V32a12,12,0,0,0-24,0v83L96.49,95.51a12,12,0,0,0-17,17Z\"/>","tag":"<path d=\"M246.15,133.18,146.83,33.86A19.85,19.85,0,0,0,132.69,28H40A12,12,0,0,0,28,40v92.69a19.85,19.85,0,0,0,5.86,14.14l99.32,99.32a20,20,0,0,0,28.28,0l84.69-84.69A20,20,0,0,0,246.15,133.18Zm-98.83,93.17L52,131V52h79l95.32,95.32ZM104,88A16,16,0,1,1,88,72,16,16,0,0,1,104,88Z\"/>","arrows-clockwise":"<path d=\"M228,48V96a12,12,0,0,1-12,12H168a12,12,0,0,1,0-24h19l-7.8-7.8a75.55,75.55,0,0,0-53.32-22.26h-.43A75.49,75.49,0,0,0,72.39,75.57,12,12,0,1,1,55.61,58.41a99.38,99.38,0,0,1,69.87-28.47H126A99.42,99.42,0,0,1,196.2,59.23L204,67V48a12,12,0,0,1,24,0ZM183.61,180.43a75.49,75.49,0,0,1-53.09,21.63h-.43A75.55,75.55,0,0,1,76.77,179.8L69,172H88a12,12,0,0,0,0-24H40a12,12,0,0,0-12,12v48a12,12,0,0,0,24,0V189l7.8,7.8A99.42,99.42,0,0,0,130,226.06h.56a99.38,99.38,0,0,0,69.87-28.47,12,12,0,0,0-16.78-17.16Z\"/>","wrench":"<path d=\"M230.47,67.5a12,12,0,0,0-19.26-4.32L172.43,99l-12.68-2.72L157,83.57l35.79-38.78a12,12,0,0,0-4.32-19.26A76.07,76.07,0,0,0,88.41,121.64L30.92,174.18a4.68,4.68,0,0,0-.39.38,36,36,0,0,0,50.91,50.91l.38-.39,52.54-57.49A76.05,76.05,0,0,0,230.47,67.5ZM160,148a51.5,51.5,0,0,1-23.35-5.52,12,12,0,0,0-14.26,2.62L64.31,208.66a12,12,0,0,1-17-17l63.55-58.07a12,12,0,0,0,2.62-14.26A51.5,51.5,0,0,1,108,96a52.06,52.06,0,0,1,52-52h.89L135.17,71.87a12,12,0,0,0-2.91,10.65l5.66,26.35a12,12,0,0,0,9.21,9.21l26.35,5.66a12,12,0,0,0,10.65-2.91L212,95.12c0,.3,0,.59,0,.89A52.06,52.06,0,0,1,160,148Z\"/>","tray":"<path d=\"M208,28H48A20,20,0,0,0,28,48V208a20,20,0,0,0,20,20H208a20,20,0,0,0,20-20V48A20,20,0,0,0,208,28Zm-4,24v92H179.31a19.86,19.86,0,0,0-14.14,5.86L147,168H109L90.83,149.86A19.86,19.86,0,0,0,76.69,144H52V52ZM52,204V168H75l18.14,18.14A19.86,19.86,0,0,0,107.31,192h41.38a19.86,19.86,0,0,0,14.14-5.86L181,168h23v36Z\"/>","sparkle":"<path d=\"M199,125.31l-49.88-18.39L130.69,57a19.92,19.92,0,0,0-37.38,0L74.92,106.92,25,125.31a19.92,19.92,0,0,0,0,37.38l49.88,18.39L93.31,231a19.92,19.92,0,0,0,37.38,0l18.39-49.88L199,162.69a19.92,19.92,0,0,0,0-37.38Zm-63.38,35.16a12,12,0,0,0-7.11,7.11L112,212.28l-16.47-44.7a12,12,0,0,0-7.11-7.11L43.72,144l44.7-16.47a12,12,0,0,0,7.11-7.11L112,75.72l16.47,44.7a12,12,0,0,0,7.11,7.11L180.28,144ZM140,40a12,12,0,0,1,12-12h12V16a12,12,0,0,1,24,0V28h12a12,12,0,0,1,0,24H188V64a12,12,0,0,1-24,0V52H152A12,12,0,0,1,140,40ZM252,88a12,12,0,0,1-12,12h-4v4a12,12,0,0,1-24,0v-4h-4a12,12,0,0,1,0-24h4V72a12,12,0,0,1,24,0v4h4A12,12,0,0,1,252,88Z\"/>","plus":"<path d=\"M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z\"/>","lightbulb":"<path d=\"M180,232a12,12,0,0,1-12,12H88a12,12,0,0,1,0-24h80A12,12,0,0,1,180,232Zm40-128a91.51,91.51,0,0,1-35.17,72.35A12.26,12.26,0,0,0,180,186v2a20,20,0,0,1-20,20H96a20,20,0,0,1-20-20v-2a12,12,0,0,0-4.7-9.51A91.57,91.57,0,0,1,36,104.52C35.73,54.69,76,13.2,125.79,12A92,92,0,0,1,220,104Zm-24,0a68,68,0,0,0-69.65-68C89.56,36.88,59.8,67.55,60,104.38a67.71,67.71,0,0,0,26.1,53.19A35.87,35.87,0,0,1,100,184h56.1A36.13,36.13,0,0,1,170,157.49,67.68,67.68,0,0,0,196,104Zm-20.07-5.32a48.5,48.5,0,0,0-31.91-40,12,12,0,0,0-8,22.62,24.31,24.31,0,0,1,16.09,20,12,12,0,0,0,23.86-2.64Z\"/>","bug-beetle":"<path d=\"M224,160a12,12,0,0,0,0-24H212V120h12a12,12,0,0,0,0-24H210.45a83.7,83.7,0,0,0-18.78-38.7l16.82-16.81a12,12,0,1,0-17-17l-18,18a83.7,83.7,0,0,0-91.1,0l-18-18a12,12,0,0,0-17,17L64.33,57.3A83.7,83.7,0,0,0,45.55,96H32a12,12,0,0,0,0,24H44v16H32a12,12,0,0,0,0,24H44a83.55,83.55,0,0,0,1.55,16H32a12,12,0,0,0,0,24H54.15a84,84,0,0,0,147.7,0H224a12,12,0,0,0,0-24H210.45A83.55,83.55,0,0,0,212,160ZM128,52a60.1,60.1,0,0,1,57.82,44H70.18A60.1,60.1,0,0,1,128,52Zm12,166.79V148a12,12,0,0,0-24,0v70.79A60.09,60.09,0,0,1,68,160V120H188v40A60.09,60.09,0,0,1,140,218.79Z\"/>"};
+const ICON = {"gauge":"<path d=\"M209.88,69.83A115.19,115.19,0,0,0,128,36h-.41C63.85,36.22,12,88.76,12,153.13V176a20,20,0,0,0,20,20H224a20,20,0,0,0,20-20V152A115.25,115.25,0,0,0,209.88,69.83ZM220,172H127.32l46.44-65A12,12,0,1,0,154.24,93L97.82,172H36V153.13c0-1.72,0-3.43.14-5.13H56a12,12,0,0,0,0-24H40.62c10.91-33.39,40-58.52,75.38-63.21V80a12,12,0,0,0,24,0V60.8A92,92,0,0,1,215.66,124H200a12,12,0,0,0,0,24h19.9c.06,1.33.1,2.66.1,4Z\"/>","chart-line-up":"<path d=\"M236,208a12,12,0,0,1-12,12H32a12,12,0,0,1-12-12V48a12,12,0,0,1,24,0v99l43.51-43.52a12,12,0,0,1,17,0L128,127l43-43H160a12,12,0,0,1,0-24h40a12,12,0,0,1,12,12v40a12,12,0,0,1-24,0V101l-51.51,51.52a12,12,0,0,1-17,0L96,129,44,181v15H224A12,12,0,0,1,236,208Z\"/>","magnifying-glass":"<path d=\"M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z\"/>","warning":"<path d=\"M240.26,186.1,152.81,34.23h0a28.74,28.74,0,0,0-49.62,0L15.74,186.1a27.45,27.45,0,0,0,0,27.71A28.31,28.31,0,0,0,40.55,228h174.9a28.31,28.31,0,0,0,24.79-14.19A27.45,27.45,0,0,0,240.26,186.1Zm-20.8,15.7a4.46,4.46,0,0,1-4,2.2H40.55a4.46,4.46,0,0,1-4-2.2,3.56,3.56,0,0,1,0-3.73L124,46.2a4.77,4.77,0,0,1,8,0l87.44,151.87A3.56,3.56,0,0,1,219.46,201.8ZM116,136V104a12,12,0,0,1,24,0v32a12,12,0,0,1-24,0Zm28,40a16,16,0,1,1-16-16A16,16,0,0,1,144,176Z\"/>","arrow-square-out":"<path d=\"M228,104a12,12,0,0,1-24,0V69l-59.51,59.51a12,12,0,0,1-17-17L187,52H152a12,12,0,0,1,0-24h64a12,12,0,0,1,12,12Zm-44,24a12,12,0,0,0-12,12v64H52V84h64a12,12,0,0,0,0-24H48A20,20,0,0,0,28,80V208a20,20,0,0,0,20,20H176a20,20,0,0,0,20-20V140A12,12,0,0,0,184,128Z\"/>","x":"<path d=\"M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z\"/>","check":"<path d=\"M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z\"/>","chat-circle-text":"<path d=\"M172,108a12,12,0,0,1-12,12H96a12,12,0,0,1,0-24h64A12,12,0,0,1,172,108Zm-12,28H96a12,12,0,0,0,0,24h64a12,12,0,0,0,0-24Zm76-8A108,108,0,0,1,78.77,224.15L46.34,235A20,20,0,0,1,21,209.66l10.81-32.43A108,108,0,1,1,236,128Zm-24,0A84,84,0,1,0,55.27,170.06a12,12,0,0,1,1,9.81l-9.93,29.79,29.79-9.93a12.1,12.1,0,0,1,3.8-.62,12,12,0,0,1,6,1.62A84,84,0,0,0,212,128Z\"/>","steam-logo":"<path d=\"M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm50.16,122.22a40,40,0,1,0-57.25-55.34L92.57,123.6,55.18,86.21a83.55,83.55,0,1,1-9.39,24.55l32.76,32.76a32,32,0,0,0,49.51,37.41ZM117,131.27A40.26,40.26,0,0,0,132.73,147L113.3,162l-.25.2a7.93,7.93,0,0,1-5,1.79,8,8,0,0,1-8-8,7.93,7.93,0,0,1,1.79-5.05l.2-.25ZM152,128a16,16,0,1,1,16-16A16,16,0,0,1,152,128Z\"/>","reddit-logo":"<path d=\"M252,104a36,36,0,0,0-57.4-28.93,145.56,145.56,0,0,0-52.54-14.45l3.8-22.81,15.67,2.61a24,24,0,1,0,3.95-23.67L138,12.16A12,12,0,0,0,124.16,22l-6.38,38.31C97.48,61.62,78,66.7,61.4,75.07a36,36,0,0,0-47.52,53.68A62.87,62.87,0,0,0,12,144c0,23.29,12.65,44.87,35.63,60.78C69.26,219.75,97.8,228,128,228s58.74-8.25,80.37-23.22C231.35,188.87,244,167.29,244,144a62.87,62.87,0,0,0-1.88-15.25A36.16,36.16,0,0,0,252,104Zm-29.91,10.34a12,12,0,0,0-5,15A39.61,39.61,0,0,1,220,144c0,15.18-9,29.75-25.29,41.05C177.05,197.27,153.36,204,128,204s-49-6.73-66.71-18.95C45,173.75,36,159.18,36,144a39.74,39.74,0,0,1,2.84-14.64,12,12,0,0,0-4.93-15A12,12,0,1,1,49.71,97a12,12,0,0,0,15.94,3.18l.22-.13C82.94,89.68,105,84,128,84H128c23,0,45,5.69,62.09,16l.22.13A12,12,0,0,0,206.29,97,11.88,11.88,0,0,1,216,92a12,12,0,0,1,6.09,22.34ZM88,148a20,20,0,1,1,20-20A20,20,0,0,1,88,148Zm100-20a20,20,0,1,1-20-20A20,20,0,0,1,188,128Zm-20.52,40.52a12,12,0,0,1-8,15,111.88,111.88,0,0,1-63,0,12,12,0,0,1,7-23,88.12,88.12,0,0,0,49,0A12,12,0,0,1,167.48,168.52Z\"/>","clock":"<path d=\"M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm0,192a84,84,0,1,1,84-84A84.09,84.09,0,0,1,128,212Zm68-84a12,12,0,0,1-12,12H128a12,12,0,0,1-12-12V72a12,12,0,0,1,24,0v44h44A12,12,0,0,1,196,128Z\"/>","download-simple":"<path d=\"M228,144v64a12,12,0,0,1-12,12H40a12,12,0,0,1-12-12V144a12,12,0,0,1,24,0v52H204V144a12,12,0,0,1,24,0Zm-108.49,8.49a12,12,0,0,0,17,0l40-40a12,12,0,0,0-17-17L140,115V32a12,12,0,0,0-24,0v83L96.49,95.51a12,12,0,0,0-17,17Z\"/>","tag":"<path d=\"M246.15,133.18,146.83,33.86A19.85,19.85,0,0,0,132.69,28H40A12,12,0,0,0,28,40v92.69a19.85,19.85,0,0,0,5.86,14.14l99.32,99.32a20,20,0,0,0,28.28,0l84.69-84.69A20,20,0,0,0,246.15,133.18Zm-98.83,93.17L52,131V52h79l95.32,95.32ZM104,88A16,16,0,1,1,88,72,16,16,0,0,1,104,88Z\"/>","arrows-clockwise":"<path d=\"M228,48V96a12,12,0,0,1-12,12H168a12,12,0,0,1,0-24h19l-7.8-7.8a75.55,75.55,0,0,0-53.32-22.26h-.43A75.49,75.49,0,0,0,72.39,75.57,12,12,0,1,1,55.61,58.41a99.38,99.38,0,0,1,69.87-28.47H126A99.42,99.42,0,0,1,196.2,59.23L204,67V48a12,12,0,0,1,24,0ZM183.61,180.43a75.49,75.49,0,0,1-53.09,21.63h-.43A75.55,75.55,0,0,1,76.77,179.8L69,172H88a12,12,0,0,0,0-24H40a12,12,0,0,0-12,12v48a12,12,0,0,0,24,0V189l7.8,7.8A99.42,99.42,0,0,0,130,226.06h.56a99.38,99.38,0,0,0,69.87-28.47,12,12,0,0,0-16.78-17.16Z\"/>","wrench":"<path d=\"M230.47,67.5a12,12,0,0,0-19.26-4.32L172.43,99l-12.68-2.72L157,83.57l35.79-38.78a12,12,0,0,0-4.32-19.26A76.07,76.07,0,0,0,88.41,121.64L30.92,174.18a4.68,4.68,0,0,0-.39.38,36,36,0,0,0,50.91,50.91l.38-.39,52.54-57.49A76.05,76.05,0,0,0,230.47,67.5ZM160,148a51.5,51.5,0,0,1-23.35-5.52,12,12,0,0,0-14.26,2.62L64.31,208.66a12,12,0,0,1-17-17l63.55-58.07a12,12,0,0,0,2.62-14.26A51.5,51.5,0,0,1,108,96a52.06,52.06,0,0,1,52-52h.89L135.17,71.87a12,12,0,0,0-2.91,10.65l5.66,26.35a12,12,0,0,0,9.21,9.21l26.35,5.66a12,12,0,0,0,10.65-2.91L212,95.12c0,.3,0,.59,0,.89A52.06,52.06,0,0,1,160,148Z\"/>","tray":"<path d=\"M208,28H48A20,20,0,0,0,28,48V208a20,20,0,0,0,20,20H208a20,20,0,0,0,20-20V48A20,20,0,0,0,208,28Zm-4,24v92H179.31a19.86,19.86,0,0,0-14.14,5.86L147,168H109L90.83,149.86A19.86,19.86,0,0,0,76.69,144H52V52ZM52,204V168H75l18.14,18.14A19.86,19.86,0,0,0,107.31,192h41.38a19.86,19.86,0,0,0,14.14-5.86L181,168h23v36Z\"/>","sparkle":"<path d=\"M199,125.31l-49.88-18.39L130.69,57a19.92,19.92,0,0,0-37.38,0L74.92,106.92,25,125.31a19.92,19.92,0,0,0,0,37.38l49.88,18.39L93.31,231a19.92,19.92,0,0,0,37.38,0l18.39-49.88L199,162.69a19.92,19.92,0,0,0,0-37.38Zm-63.38,35.16a12,12,0,0,0-7.11,7.11L112,212.28l-16.47-44.7a12,12,0,0,0-7.11-7.11L43.72,144l44.7-16.47a12,12,0,0,0,7.11-7.11L112,75.72l16.47,44.7a12,12,0,0,0,7.11,7.11L180.28,144ZM140,40a12,12,0,0,1,12-12h12V16a12,12,0,0,1,24,0V28h12a12,12,0,0,1,0,24H188V64a12,12,0,0,1-24,0V52H152A12,12,0,0,1,140,40ZM252,88a12,12,0,0,1-12,12h-4v4a12,12,0,0,1-24,0v-4h-4a12,12,0,0,1,0-24h4V72a12,12,0,0,1,24,0v4h4A12,12,0,0,1,252,88Z\"/>","plus":"<path d=\"M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z\"/>","lightbulb":"<path d=\"M180,232a12,12,0,0,1-12,12H88a12,12,0,0,1,0-24h80A12,12,0,0,1,180,232Zm40-128a91.51,91.51,0,0,1-35.17,72.35A12.26,12.26,0,0,0,180,186v2a20,20,0,0,1-20,20H96a20,20,0,0,1-20-20v-2a12,12,0,0,0-4.7-9.51A91.57,91.57,0,0,1,36,104.52C35.73,54.69,76,13.2,125.79,12A92,92,0,0,1,220,104Zm-24,0a68,68,0,0,0-69.65-68C89.56,36.88,59.8,67.55,60,104.38a67.71,67.71,0,0,0,26.1,53.19A35.87,35.87,0,0,1,100,184h56.1A36.13,36.13,0,0,1,170,157.49,67.68,67.68,0,0,0,196,104Zm-20.07-5.32a48.5,48.5,0,0,0-31.91-40,12,12,0,0,0-8,22.62,24.31,24.31,0,0,1,16.09,20,12,12,0,0,0,23.86-2.64Z\"/>","bug-beetle":"<path d=\"M224,160a12,12,0,0,0,0-24H212V120h12a12,12,0,0,0,0-24H210.45a83.7,83.7,0,0,0-18.78-38.7l16.82-16.81a12,12,0,1,0-17-17l-18,18a83.7,83.7,0,0,0-91.1,0l-18-18a12,12,0,0,0-17,17L64.33,57.3A83.7,83.7,0,0,0,45.55,96H32a12,12,0,0,0,0,24H44v16H32a12,12,0,0,0,0,24H44a83.55,83.55,0,0,0,1.55,16H32a12,12,0,0,0,0,24H54.15a84,84,0,0,0,147.7,0H224a12,12,0,0,0,0-24H210.45A83.55,83.55,0,0,0,212,160ZM128,52a60.1,60.1,0,0,1,57.82,44H70.18A60.1,60.1,0,0,1,128,52Zm12,166.79V148a12,12,0,0,0-24,0v70.79A60.09,60.09,0,0,1,68,160V120H188v40A60.09,60.09,0,0,1,140,218.79Z\"/>"};
 const GROUP_ROWS = 8;
 // Area of the game, guessed from the text when nobody has set one. First match wins.
 const AREAS = [
@@ -307,7 +354,8 @@ function paintIcons(root = document) { root.querySelectorAll("[data-ic]").forEac
 const store = { get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 
 const S = { entries: [], db: false, kinds: [], priorities: [], labels: [], sources: [], platforms: [], statuses: [], hints: {}, jiraBase: "",
-  kind: "all", stage: "", area: new Set(), label: new Set(), source: new Set(), platform: new Set(), q: "", sort: "priority", open: new Set(), full: new Set(), logs: {} };
+  kind: "all", stage: "", area: new Set(), label: new Set(), source: new Set(), platform: new Set(), q: "", sort: "priority", open: new Set(), full: new Set(), logs: {},
+  view: "board", suggestions: [], sopen: new Set(), mode: "grouped", range: "all", from: "", to: "", ropen: new Set(), byId: new Map(), kids: new Map(), M: null, td: null, gaps: false, theme: null };
 const DONE = "Closed";
 const fmt = (d) => { if (!d) return ""; const t = new Date(d.length === 10 ? d + "T12:00:00" : d); return isNaN(t) ? d : t.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); };
 const reports = (e) => Math.max(1 + (e.links || []).length, +(e.extra && e.extra.reports) || 0);
@@ -321,6 +369,55 @@ const KIND_TAG = { Bug: ["bug", "bug-beetle", "Bug"], Feedback: ["fb", "lightbul
 const ktag = (k) => { const [c, i, t] = KIND_TAG[k] || KIND_TAG.Feedback; return `<span class="ktag ${c}">${ic(i, 13)}${t}</span>`; };
 const stageKey = (s) => "st-" + String(s).replace(/[^a-z]+/gi, "-").toLowerCase();
 
+// ---- groups: one entry per report, children point at the group's first entry with dup_of ----
+function indexGroups() {
+  S.byId = new Map(S.entries.map((e) => [e.id, e]));
+  S.kids = new Map();
+  for (const e of S.entries) if (isChild(e)) { if (!S.kids.has(e.dup_of)) S.kids.set(e.dup_of, []); S.kids.get(e.dup_of).push(e); }
+}
+const isChild = (e) => !!(e.dup_of && e.dup_of !== e.id && S.byId.has(e.dup_of));
+const rootOf = (e) => (isChild(e) ? S.byId.get(e.dup_of) : e);
+const members = (e) => [e, ...(S.kids.get(e.id) || [])];
+const same = (m, root) => m !== root && !!(m.extra && m.extra.same);
+const day = (d) => String(d || "").slice(0, 10);
+// Discord message ids carry their timestamp, so a bare Discord link still has a date
+const snowDate = (u) => { const m = String(u || "").match(/discord\.com\/channels\/\d+\/\d+\/(\d{17,20})/); return m ? new Date(Number(BigInt(m[1]) >> 22n) + 1420070400000).toISOString().slice(0, 10) : ""; };
+const srcOfUrl = (u) => /discord\.com/.test(u) ? "Discord" : /reddit\.com/.test(u) ? "Reddit" : /steamcommunity\.com\/.*recommended/.test(u) ? "Steam review" : /steamcommunity\.com/.test(u) ? "Steam forum" : "";
+// The reports one entry holds: its own post, extra reports folded into it (extra.more), and bare extra links.
+function ownReports(e) {
+  const out = [{ e, k: e.id + ":0", main: true, d: day(e.posted_at) || snowDate(e.url), t: fullText(e), u: safeUrl(e.url), src: e.source }];
+  for (const [i, m] of ((e.extra && e.extra.more) || []).entries()) out.push({ e, k: `${e.id}:m${i}`, d: day(m.d) || snowDate(m.u), t: m.t, o: m.o, u: safeUrl(m.u), src: m.src || srcOfUrl(m.u || ""), lang: m.lang, rsame: !!m.same });
+  const seen = new Set(out.map((r) => r.u).filter(Boolean));
+  for (const [i, l] of (e.links || []).entries()) {
+    const u = safeUrl(l); if (!u || seen.has(u)) continue; seen.add(u);
+    out.push({ e, k: `${e.id}:l${i}`, d: snowDate(u), t: "", u, src: srcOfUrl(u) });
+  }
+  const left = reports(e) - out.length;
+  if (left > 0) out.push({ e, k: e.id + ":x", d: "", t: "", n: left, src: "" });
+  return out;
+}
+function groupReports(root) {
+  if (!groupReports.c.has(root.id)) groupReports.c.set(root.id, members(root).flatMap((m) => ownReports(m).map((r) => ({ ...r, root, same: same(m, root) || !!r.rsame }))));
+  return groupReports.c.get(root.id);
+}
+groupReports.c = new Map();
+// "Single report" / "Multiple reports" follow the group's real count, whatever the stored label says
+const COUNT_TAGS = ["Single report", "Multiple reports"];
+const shownTags = (e) => { const t = (e.tags || []).filter((x) => !COUNT_TAGS.includes(x)), had = (e.tags || []).some((x) => COUNT_TAGS.includes(x)), n = counted(groupReports(e));
+  return n > 1 ? [...t, "Multiple reports"] : had ? [...t, "Single report"] : t; };
+const counted = (rs) => rs.reduce((n, r) => n + (r.same ? 0 : r.n || 1), 0);
+const rangeOn = () => !!(S.from || S.to);
+const inRange = (d) => !rangeOn() || (!!d && (!S.from || d >= S.from) && (!S.to || d <= S.to));
+const groupCount = (root) => counted(groupReports(root).filter((r) => inRange(r.d)));
+const lastDate = (root) => groupReports(root).map((r) => r.d).filter(inRange).sort().pop() || "";
+const RANGES = [["all", "All time"], ["7", "7 days"], ["30", "30 days"], ["90", "90 days"], ["custom", "Custom"]];
+function setRange(v) {
+  S.range = v;
+  if (v === "all") S.from = S.to = "";
+  else if (v !== "custom") { S.from = new Date(Date.now() - (+v - 1) * 864e5).toISOString().slice(0, 10); S.to = ""; }
+  else { S.from = $("#from").value; S.to = $("#to").value; }
+}
+
 async function load(again = 0) {
   let d;
   try {
@@ -333,32 +430,49 @@ async function load(again = 0) {
     return;
   }
   Object.assign(S, { entries: d.entries || [], db: !!d.db, kinds: d.kinds || [], priorities: d.priorities || [], labels: d.labels || [],
-    sources: d.sources || [], platforms: d.platforms || [], statuses: d.statuses || [], hints: d.stage_hints || {}, jiraBase: d.jira_base || "" });
+    sources: d.sources || [], platforms: d.platforms || [], statuses: d.statuses || [], hints: d.stage_hints || {}, jiraBase: d.jira_base || "", suggestions: d.suggestions || [] });
   $("#mode").textContent = S.db ? (d.pending ? `Importing, ${d.pending} left…` : "Live, saves for everyone") : "Read-only";
   $("#mode-dot").className = "pulse " + (S.db ? "ok" : "warn");
   const b = $("#banner");
   b.hidden = S.db;
   if (!S.db) b.innerHTML = `${ic("warning")}<div><b>Saving is not switched on here.</b> Entries show, but changes on this page can't be saved until the tracker database is connected to this site.</div>`;
   $("#add").disabled = !S.db;
+  indexGroups(); groupReports.c.clear(); relink();
   render();
   if (d.pending && again < 60) setTimeout(() => load(again + 1), 1200);
+  else if (S.td === null) loadTrends();
+  else hashActions();
 }
+// Trends' data file links each entry to its theme's negative reviews (TrackerLinks, shared with Trends and the Inbox)
+async function loadTrends() {
+  S.td = undefined;
+  try { const r = await fetch("/trends/trends_data.json"); if (!r.ok) throw 0; S.td = await r.json(); } catch { S.td = false; }
+  relink(); render(); hashActions();
+}
+// (the theme guess uses the area someone picked, not the tracker's own area guess, so Trends and the Inbox file entries the same way)
+function relink() { if (S.td && window.TrackerLinks) S.M = TrackerLinks.build(S.td, S.entries); }
+const impOf = (e) => (S.M && S.M.entry.get(e.id)) || null;
 
 function matches(e, skip) {
   const q = S.q.trim().toLowerCase();
   return (S.kind === "all" || e.kind === S.kind)
     && (skip === "area" || !S.area.size || S.area.has(areaOf(e)))
-    && (!S.label.size || (e.tags || []).some((t) => S.label.has(t)))
+    && (!S.label.size || shownTags(e).some((t) => S.label.has(t)))
     && (!S.source.size || S.source.has(e.source || "Unknown"))
     && (!S.platform.size || (e.platforms || []).some((p) => S.platform.has(p)))
-    && (!q || [e.title, e.summary, e.notes, e.jira, e.jira_key, e.where, e.source, e.added_by, areaOf(e), "#" + e.n, ...(e.tags || []), ...(e.platforms || [])].join(" ").toLowerCase().includes(q));
+    && (!q || members(e).some((m) => hay(m).includes(q)))
+    && (!rangeOn() || groupReports(e).some((r) => inRange(r.d)))
+    && (S.theme == null || (impOf(e)?.th || []).includes(S.theme));
 }
+const hay = (e) => [e.title, e.summary, e.notes, e.jira, e.jira_key, e.where, e.source, e.added_by, areaOf(e), "#" + e.n, ...(e.tags || []), ...(e.platforms || []),
+  ...((e.extra && e.extra.more) || []).flatMap((m) => [m.t, m.o])].join(" ").toLowerCase();
 function sorted(xs) {
   const posted = (e) => e.posted_at || (e.added_at || "").slice(0, 10);
   const cmp = {
-    priority: (a, b) => prioNum(b) - prioNum(a) || reports(b) - reports(a) || posted(b).localeCompare(posted(a)),
-    reports: (a, b) => reports(b) - reports(a) || prioNum(b) - prioNum(a),
-    posted: (a, b) => posted(b).localeCompare(posted(a)),
+    priority: (a, b) => prioNum(b) - prioNum(a) || groupCount(b) - groupCount(a) || lastDate(b).localeCompare(lastDate(a)),
+    reports: (a, b) => groupCount(b) - groupCount(a) || prioNum(b) - prioNum(a),
+    impact: (a, b) => (impOf(b)?.cost || 0) - (impOf(a)?.cost || 0) || groupCount(b) - groupCount(a) || prioNum(b) - prioNum(a),
+    posted: (a, b) => lastDate(b).localeCompare(lastDate(a)) || posted(b).localeCompare(posted(a)),
     changed: (a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""),
   }[S.sort];
   return xs.sort((a, b) => cmp(a, b) || b.n - a.n);
@@ -367,8 +481,28 @@ function chipRow(el, values, set, attr, count) {
   el.innerHTML = values.map((v) => `<button class="chipbtn" data-${attr}="${esc(v)}" aria-pressed="${set.has(v)}">${esc(v)}<span class="n">${count(v)}</span></button>`).join("");
 }
 
+function kindTabs(xs) {
+  $("#kinds").innerHTML = [["all", "All"], ["Bug", "Bugs"], ["Feedback", "Feedback"], ["Request", "Requests"]].map(([k, label]) =>
+    `<button class="tab" role="tab" data-kind="${esc(k)}" aria-label="${esc(label)}" aria-selected="${S.kind === k}">${KIND_TAG[k] ? `<span class="kic ${KIND_TAG[k][0]}">${ic(KIND_TAG[k][1], 15)}</span>` : ""}<span class="${KIND_TAG[k] ? "tl" : ""}">${esc(label)}</span><span class="n">${xs.filter((e) => k === "all" || e.kind === k).length}</span></button>`).join("");
+}
 function render() {
-  const all = S.entries;
+  const sug = S.view === "suggest", imp = S.view === "impact";
+  document.body.classList.toggle("sug", sug);
+  document.body.classList.toggle("imp", imp);
+  $("#sugbtn").setAttribute("aria-pressed", sug);
+  $("#impbtn").setAttribute("aria-pressed", imp);
+  $("#sugn").textContent = S.suggestions.length || "";
+  $("#thchip").innerHTML = S.theme != null && S.M ? `<span class="thf">Theme: ${esc(S.M.R[S.theme].name)}<button data-thclear="1" aria-label="Show all themes">${ic("x", 14)}</button></span>` : "";
+  if (sug) return renderSuggest();
+  if (imp) return renderImpact();
+  const each = S.mode === "each";
+  document.querySelectorAll("#modes .chipbtn").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === S.mode));
+  const sorts = each ? [["new", "Newest"], ["old", "Oldest"]] : [["priority", "Priority"], ["impact", "Impact"], ["reports", "Reports"], ["posted", "Newest"], ["changed", "Changed"]];
+  if (!sorts.some(([k]) => k === S.sort)) S.sort = sorts[0][0];
+  $("#sort").innerHTML = sorts.map(([k, l]) => `<button class="chipbtn" data-sort="${k}" aria-pressed="${S.sort === k}">${l}</button>`).join("");
+  $("#ranges").innerHTML = RANGES.map(([k, l]) => `<button class="chipbtn" data-range="${k}" aria-pressed="${S.range === k}">${l}</button>`).join("");
+  $("#custom").hidden = S.range !== "custom";
+  const all = S.entries.filter((e) => !isChild(e));
   const inView = all.filter((e) => matches(e));
   // next-step board: counts follow the type, area, label, source and search filters
   $("#stages").innerHTML = S.statuses.map((s) => {
@@ -378,18 +512,18 @@ function render() {
       <span class="sub">${hi ? `<b class="neg">${hi} very high+</b> · ` : ""}${esc(S.hints[s] || "")}</span></button>`;
   }).join("");
   const scope = all.filter((e) => (!S.stage ? e.status !== DONE : e.status === S.stage));
-  $("#kinds").innerHTML = [["all", "All"], ["Bug", "Bugs"], ["Feedback", "Feedback"], ["Request", "Requests"]].map(([k, label]) =>
-    `<button class="tab" role="tab" data-kind="${esc(k)}" aria-label="${esc(label)}" aria-selected="${S.kind === k}">${KIND_TAG[k] ? `<span class="kic ${KIND_TAG[k][0]}">${ic(KIND_TAG[k][1], 15)}</span>` : ""}<span class="${KIND_TAG[k] ? "tl" : ""}">${esc(label)}</span><span class="n">${scope.filter((e) => k === "all" || e.kind === k).length}</span></button>`).join("");
+  kindTabs(scope);
   const areaScope = scope.filter((e) => matches(e, "area"));
   chipRow($("#areas"), AREA_NAMES.filter((a) => areaScope.some((e) => areaOf(e) === a) || S.area.has(a)), S.area, "area", (v) => areaScope.filter((e) => areaOf(e) === v).length);
   const sc2 = scope.filter((e) => S.kind === "all" || e.kind === S.kind);
-  chipRow($("#labels"), S.labels, S.label, "label", (v) => sc2.filter((e) => (e.tags || []).includes(v)).length);
+  chipRow($("#labels"), S.labels, S.label, "label", (v) => sc2.filter((e) => shownTags(e).includes(v)).length);
   const srcs = [...S.sources, ...(sc2.some((e) => !e.source) ? ["Unknown"] : [])];
   chipRow($("#sources"), srcs.filter((v) => sc2.some((e) => (e.source || "Unknown") === v) || S.source.has(v)), S.source, "source", (v) => sc2.filter((e) => (e.source || "Unknown") === v).length);
   chipRow($("#platforms"), S.platforms.filter((v) => sc2.some((e) => (e.platforms || []).includes(v)) || S.platform.has(v)), S.platform, "platform", (v) => sc2.filter((e) => (e.platforms || []).includes(v)).length);
   const nf = S.label.size + S.source.size + S.platform.size;
   $("#more-filters").textContent = nf ? `More filters (${nf} on)` : "More filters";
 
+  if (each) return renderEach(scope);
   // one group per next step (or just the chosen one)
   const groups = (S.stage ? [S.stage] : S.statuses.filter((s) => s !== DONE)).map((s) => [s, sorted(inView.filter((e) => e.status === s))]);
   const html = groups.filter(([, xs]) => xs.length || S.stage).map(([s, xs]) => {
@@ -414,8 +548,9 @@ function row(e) {
       <span class="ltitle">${esc(e.title)}</span>
       <span class="lmeta">
         <span class="tag area">${esc(areaOf(e))}</span>
-        ${reports(e) > 1 ? `<span class="tag">×${reports(e)}</span>` : ""}
+        ${groupCount(e) > 1 ? `<span class="tag" title="${esc(rangeOn() ? "reports in these dates" : "reports from different players")}">×${groupCount(e)}</span>` : ""}
         ${e.jira_key ? `<span class="tag jira">${esc(e.jira_key)}</span>` : ""}
+        ${S.sort === "impact" && impOf(e)?.cost >= 0.05 ? `<span class="tag pts" title="What its theme costs the 30-day review score">+${TrackerLinks.fmtPts(impOf(e).cost)} pts</span>` : ""}
         <span class="age">${age === null ? "" : age + "d"}</span>
       </span>
     </button>
@@ -425,46 +560,271 @@ function row(e) {
 
 function detail(e) {
   const url = safeUrl(e.url), jira = jiraHref(e);
-  const links = (e.links || []).map(safeUrl).filter(Boolean);
   const shots = (e.shots || []).map(safeUrl).filter(Boolean);
   const log = S.logs[e.id];
   const jtitle = e.jira && e.jira_key ? e.jira.replace(e.jira_key, "").replace(/^[\s:–-]+/, "") : "";
-  const dup = e.dup_of && S.entries.find((x) => x.id === e.dup_of);
   return `<div class="detail">
     <div class="top">
       ${e.priority ? `<span class="tag p${prioNum(e)}">${esc(e.priority)}</span>` : ""}
       ${jira ? `<a class="tag jira" href="${esc(jira)}" target="_blank" rel="noopener">${esc(e.jira_key || "Jira")}${e.jira_status ? " · " + esc(e.jira_status) : ""}${ic("arrow-square-out", 13)}</a>` : ""}
-      ${(e.tags || []).map((t) => `<span class="tag lbl-t">${esc(t)}</span>`).join("")}
+      ${shownTags(e).map((t) => `<span class="tag lbl-t">${esc(t)}</span>`).join("")}
       ${(e.platforms || []).length ? `<span class="tag plat">${esc(e.platforms.join(", "))}</span>` : ""}
       <span class="when">${e.posted_at ? "Posted " + esc(fmt(e.posted_at)) : "Added " + esc(fmt(e.added_at))}</span></div>
     ${url ? `<a class="qlink open-src" href="${esc(url)}" target="_blank" rel="noopener">Open the original post${ic("arrow-square-out", 14)}</a>` : ""}
     ${e.summary ? `<div class="ptxt">${esc(rest(e) ? e.summary : "")}</div>` : ""}
     ${e.source || e.where ? `<div class="where">${ic(SRC_ICON[e.source] || "tag", 13)} ${esc([e.source, e.where].filter(Boolean).join(" · "))}</div>` : ""}
     ${jtitle ? `<div class="jtxt"><b>${esc(e.jira_key)}</b> ${esc(jtitle)}</div>` : ""}
-    ${dup ? `<div class="jtxt">Duplicate of <a class="qlink inl" href="#${esc(dup.id)}">#${esc(dup.n)} ${esc(dup.title)}</a></div>` : ""}
     ${e.notes ? `<div class="notes"><span class="lbl">Note</span>${esc(e.notes)}</div>` : ""}
-    ${links.length ? `<div class="links">${links.map((l, i) => `<a class="tag" href="${esc(l)}" target="_blank" rel="noopener">Report ${i + 2}${ic("arrow-square-out", 13)}</a>`).join("")}</div>` : ""}
+    ${impactBlock(e)}
+    ${reportsBlock(e)}
     ${shots.length ? `<div class="shots">${shots.map((s) => `<a href="${esc(s)}" target="_blank" rel="noopener"><img src="${esc(s)}" alt="Screenshot" loading="lazy"></a>`).join("")}</div>` : ""}
     ${S.db ? `<div class="moveto"><span class="lbl">Move to</span><div class="filters">${S.statuses.map((s) =>
       `<button class="chipbtn" data-move="${esc(e.id)}" data-to="${esc(s)}" aria-pressed="${s === e.status}">${esc(s)}</button>`).join("")}</div></div>` : ""}
     ${log ? `<div class="log">${log.length ? log.map((l) => `<div>${esc(fmt(l.at))} · <b>${esc(l.by || "Someone")}</b> changed ${esc(l.field.replace("_", " ").replace("tags", "labels").replace("status", "next step"))}${["status", "priority", "area"].includes(l.field) ? ` to <b>${esc(JSON.parse(l.new || '""'))}</b>` : ""}</div>`).join("") : "No changes since it was added."}</div>` : ""}
     <div class="foot"><span>${esc(e.added_by || "Added")} ${esc(fmt(e.added_at))}${e.updated_by && e.updated_by !== e.added_by ? ` · changed ${esc(fmt(e.updated_at))} by ${esc(e.updated_by)}` : ""}</span>
       ${S.db ? `<span class="acts">
-        <span class="merge"><input data-mergein="${esc(e.id)}" inputmode="numeric" placeholder="#" aria-label="Merge into entry number"><button class="btn sm ghost" data-merge="${esc(e.id)}">Merge into</button></span>
+        <span class="merge"><input data-mergein="${esc(e.id)}" inputmode="numeric" placeholder="#" aria-label="Group with entry number"><button class="btn sm ghost" data-merge="${esc(e.id)}" title="Same thing reported by another player">Group with</button></span>
         <button class="btn sm ghost" data-log="${esc(e.id)}">${log ? "Hide history" : "History"}</button><button class="btn sm" data-edit="${esc(e.id)}">Edit</button></span>` : ""}</div>
   </div>`;
 }
 
+// Every report in a group, newest first, each with its own date, text and link.
+function reportsBlock(root) {
+  const rs = groupReports(root);
+  if (rs.length < 2) return "";
+  const n = counted(rs), reps = rs.filter((r) => r.same).length;
+  const dates = rs.map((r) => r.d).filter(Boolean).sort();
+  const sorted = [...rs].sort((a, b) => (b.d || "").localeCompare(a.d || ""));
+  const span = dates.length ? (dates[0] === dates[dates.length - 1] ? fmt(dates[0]) : `${fmt(dates[0])} to ${fmt(dates[dates.length - 1])}`) : "";
+  return `<div class="reps">
+    <div class="rhead"><span class="lbl">Reports</span><span class="sub">${n} from different players${reps ? `, ${reps} repeat${reps > 1 ? "s" : ""} by the same player` : ""}${span ? " · " + esc(span) : ""}</span></div>
+    ${sorted.map((r) => repCard(r)).join("")}
+  </div>`;
+}
+function repCard(r, inEach) {
+  const m = r.e, child = m !== r.root;
+  if (r.n) return `<div class="rep dim"><div class="rtop">${r.n} more report${r.n > 1 ? "s" : ""} without a link or date${child ? ` · from #${esc(m.n)}` : ""}</div></div>`;
+  return `<div class="rep ${child ? "child" : ""} ${r.same ? "dim" : ""}">
+    <div class="rtop">${r.src ? `<span class="tag">${esc(r.src)}</span>` : ""}${r.lang && r.lang !== "english" ? `<span>${esc(langName(r.lang))}</span>` : ""}
+      <span>${esc(r.d ? fmt(r.d) : "No date")}</span>${child ? `<span class="num">#${esc(m.n)}</span>` : ""}${child && r.main && m.jira_key ? `<a class="tag jira" href="${esc(jiraHref(m))}" target="_blank" rel="noopener">${esc(m.jira_key)}</a>` : ""}
+      ${r.same ? `<span class="tag same">Same player again</span>` : ""}
+      ${r.u ? `<a class="qlink inl" href="${esc(r.u)}" target="_blank" rel="noopener">Open${ic("arrow-square-out", 13)}</a>` : ""}</div>
+    ${r.t && !(r.main && !child && !inEach) ? `<div class="rtxt">${esc(r.t)}</div>` : r.main && !child && !inEach ? `<div class="sub">The entry's own post (above)</div>` : ""}
+    ${r.o ? `<div class="rorig">${esc(r.o)}</div>` : ""}
+    ${S.db && child && r.main && !inEach ? `<div class="racts">
+      <button class="btn ghost" data-same="${esc(m.id)}" data-v="${r.same ? "" : "1"}">${r.same ? "Different player" : "Same player again"}</button>
+      <button class="btn ghost" data-ungroup="${esc(m.id)}">Take out of group</button>
+      <button class="btn ghost" data-edit="${esc(m.id)}">Edit</button></div>` : ""}
+  </div>`;
+}
+// Each report on its own row, by date: the grouped entries pulled apart again.
+function renderEach(scope) {
+  const roots = scope.filter((e) => matches(e));
+  const q = S.q.trim().toLowerCase();
+  let rs = roots.flatMap(groupReports).filter((r) => !r.n && inRange(r.d) && (!q || hay(r.e).includes(q) || [r.t, r.o].join(" ").toLowerCase().includes(q)));
+  rs.sort((a, b) => (S.sort === "old" ? (a.d || "9999").localeCompare(b.d || "9999") : (b.d || "").localeCompare(a.d || "")) || b.root.n - a.root.n);
+  const counted_ = counted(rs), cap = S.full.has("each") ? rs.length : 60;
+  $("#list").innerHTML = `<section class="group">
+    <div class="ghead"><h2>Each report</h2><span class="n">${rs.length}</span><span class="ghint">${counted_ < rs.length ? `${counted_} from different players · ` : ""}every report on its own row, by the date it was posted</span></div>
+    <div class="rows">${rs.slice(0, cap).map((r) => {
+      const open = S.ropen.has(r.k);
+      return `<article class="item ${open ? "is-open" : ""}">
+        <button class="line" data-ropen="${esc(r.k)}" aria-expanded="${open}">
+          <span class="rdate">${esc(r.d ? fmt(r.d) : "No date")}</span>
+          ${ktag(r.root.kind)}
+          <span class="num">#${esc(r.root.n)}</span>
+          <span class="ltitle">${esc(r.main ? r.e.title : r.t || r.root.title)}</span>
+          <span class="lmeta">${r.same ? `<span class="tag same">Repeat</span>` : ""}${r.src ? `<span class="tag area">${esc(r.src)}</span>` : ""}<span class="tag st ${stageKey(r.root.status)}">${esc(r.root.status)}</span></span>
+        </button>
+        ${open ? `<div class="detail">${repCard(r, true)}${r.e !== r.root || !r.main ? `<div class="jtxt">In group <a class="qlink inl" href="#${esc(r.root.id)}">#${esc(r.root.n)} ${esc(r.root.title)}</a> · ${groupCount(r.root)} report${groupCount(r.root) > 1 ? "s" : ""}</div>` : groupCount(r.root) > 1 ? `<div class="jtxt"><a class="qlink inl" href="#${esc(r.root.id)}">Open the group #${esc(r.root.n)}</a> · ${groupCount(r.root)} reports</div>` : `<div class="jtxt"><a class="qlink inl" href="#${esc(r.root.id)}">Open #${esc(r.root.n)}</a></div>`}</div>` : ""}
+      </article>`;
+    }).join("") || `<div class="empty sm">No reports in these dates with these filters.</div>`}</div>
+    ${rs.length > cap ? `<button class="btn ghost sm" data-full="each">Show all ${rs.length}</button>` : ""}
+  </section>`;
+}
+
+// ---- Suggested: reports the morning run sorted and translated, waiting for one tap ----
+const LANGS = { english: "English", schinese: "Chinese", tchinese: "Chinese (Trad.)", russian: "Russian", spanish: "Spanish", latam: "Spanish (LatAm)",
+  brazilian: "Portuguese (BR)", portuguese: "Portuguese", turkish: "Turkish", german: "German", french: "French", polish: "Polish", japanese: "Japanese",
+  koreana: "Korean", ukrainian: "Ukrainian", italian: "Italian", thai: "Thai", czech: "Czech", vietnamese: "Vietnamese", dutch: "Dutch" };
+const langName = (l) => LANGS[l] || (l ? l[0].toUpperCase() + l.slice(1) : "English");
+const xLang = (x) => (x.lang ? langName(x.lang) : x.english ? "Translated" : "English");
+const STOP = new Set("the and for with that this are was but not you your have has had its it's can cant can't from they them their there when what why how all any too very just more most some into out about been were will would could should after before since than then also only even still does doesn't don't didn't get got use using used game aimlabs aimlab player players user users want wants like add please update updates updated issue issues problem match matches".split(" "));
+const stem = (w) => (w.length > 4 ? w.replace(/(ings?|ed|es|s)$/, "") : w);
+const toks = (t) => new Set((String(t || "").toLowerCase().match(/[\p{L}\p{N}+]{3,}/gu) || []).filter((w) => !STOP.has(w)).map(stem));
+const overlap = (a, b) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n; };
+const tokCache = new Map();
+function entryToks(e) {
+  const k = e.id + "|" + e.updated_at;
+  if (!tokCache.has(k)) tokCache.set(k, toks(`${e.title} ${(e.summary || "").slice(0, 160)}`));
+  return tokCache.get(k);
+}
+function sugGroups(xs) {
+  // same kind + same issue wording, then fold near-identical wordings together
+  const by = new Map();
+  for (const x of xs) {
+    const k = x.kind + "|" + (x.issue || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    if (!by.has(k)) by.set(k, { id: x.sid, kind: x.kind, issue: x.issue, items: [] });
+    by.get(k).items.push(x);
+  }
+  const gs = [...by.values()];
+  for (let i = 0; i < gs.length; i++) for (let j = i + 1; j < gs.length; j++) {
+    const a = gs[i], b = gs[j];
+    if (!a || !b || a.kind !== b.kind) continue;
+    const ta = toks(a.issue), tb = toks(b.issue), n = overlap(ta, tb);
+    if (n >= 2 && n / Math.min(ta.size, tb.size) >= 0.75) { a.items.push(...b.items); gs[j] = null; }
+  }
+  return gs.filter(Boolean).map((g) => {
+    g.items.sort((a, b) => (b.posted_at || "").localeCompare(a.posted_at || ""));
+    g.area = g.items[0].area || "";
+    // likely tracker entries: the issue line against entry titles (cheap word overlap, no Claude)
+    const q = toks(g.issue);
+    g.matches = q.size ? S.entries.filter((e) => e.status !== DONE && !isChild(e)).map((e) => {
+      const et = entryToks(e), n = overlap(q, et);
+      return [e, n, n / Math.sqrt(q.size * Math.max(et.size, 1))];
+    }).filter(([, n, sc]) => n >= 2 && sc >= 0.3).sort((a, b) => b[2] - a[2]).slice(0, 3).map(([e]) => e) : [];
+    return g;
+  });
+}
+function renderSuggest() {
+  const q = S.q.trim().toLowerCase();
+  const xs = S.suggestions.filter((x) => !q || [x.issue, x.text, x.english, x.title, x.area, x.source, xLang(x)].join(" ").toLowerCase().includes(q));
+  kindTabs(xs);
+  const gs = sugGroups(xs.filter((x) => S.kind === "all" || x.kind === S.kind))
+    .sort((a, b) => b.items.length - a.items.length || (b.items[0].posted_at || "").localeCompare(a.items[0].posted_at || ""));
+  S.groups = new Map(gs.map((g) => [g.id, g]));
+  $("#list").innerHTML = `<section class="group">
+    <div class="ghead"><h2>Suggested</h2><span class="n">${gs.length}</span><span class="ghint">New Steam reviews, Reddit and Steam forum posts, sorted and translated each weekday morning. Add them, +1 an entry, or dismiss.</span></div>
+    <div class="rows">${gs.map(sugRow).join("") || `<div class="empty sm">${S.suggestions.length ? "Nothing matches these filters." : "All caught up. New reports show up here after the next weekday morning run."}</div>`}</div>
+  </section>`;
+}
+function sugRow(g) {
+  const open = S.sopen.has(g.id), n = g.items.length;
+  const langs = {}; for (const x of g.items) langs[xLang(x)] = (langs[xLang(x)] || 0) + 1;
+  const neg = g.items.filter((x) => x.sentiment === "negative" || x.voted_up === false).length;
+  const newest = g.items[0].posted_at ? Math.max(0, Math.floor((Date.now() - Date.parse(g.items[0].posted_at)) / 864e5)) : null;
+  return `<article class="item ${open ? "is-open" : ""}">
+    <button class="line" data-sugtoggle="${esc(g.id)}" aria-expanded="${open}">
+      ${ktag(g.kind)}
+      <span class="ltitle">${esc(g.issue)}</span>
+      <span class="lmeta">
+        ${g.area ? `<span class="tag area">${esc(g.area)}</span>` : ""}
+        ${n > 1 ? `<span class="tag">×${n}</span>` : ""}
+        ${g.matches.length ? `<span class="tag match">#${esc(g.matches[0].n)}?</span>` : ""}
+        <span class="age">${newest === null ? "" : newest + "d"}</span>
+      </span>
+    </button>
+    ${open ? sugDetail(g, langs, neg) : ""}
+  </article>`;
+}
+function sugDetail(g, langs, neg) {
+  const n = g.items.length, src = {};
+  for (const x of g.items) src[x.source] = (src[x.source] || 0) + 1;
+  const pts = g.items.map((x) => x.playtime_h).filter((v) => typeof v === "number");
+  const dates = g.items.map((x) => (x.posted_at || "").slice(0, 10)).filter(Boolean).sort();
+  const stats = [`${n} report${n > 1 ? "s" : ""}`, Object.entries(src).map(([k, v]) => `${k} ${v}`).join(", "),
+    Object.entries(langs).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", "),
+    neg ? `${neg} negative` : "", pts.length ? `avg playtime ${Math.round(pts.reduce((a, b) => a + b, 0) / pts.length)} h` : "",
+    dates.length ? (dates[0] === dates[dates.length - 1] ? fmt(dates[0]) : `${fmt(dates[0])} to ${fmt(dates[dates.length - 1])}`) : ""].filter(Boolean);
+  return `<div class="detail">
+    <div class="sstats">${stats.map((t) => `<span>${esc(t)}</span>`).join("")}</div>
+    ${S.db ? `<div class="sacts">
+      <button class="btn sm primary" data-sugadd="${esc(g.id)}">${ic("plus", 14)}Add as new</button>
+      ${g.matches.map((e) => `<button class="btn sm" data-sugmerge="${esc(g.id)}" data-into="${esc(e.n)}" title="${esc(e.title)}">+${n} to #${esc(e.n)} <span class="mt">${esc(e.title)}</span></button>`).join("")}
+      <span class="merge"><input data-sugin="${esc(g.id)}" inputmode="numeric" placeholder="#" aria-label="Add these reports to entry number"><button class="btn sm ghost" data-sugmerge="${esc(g.id)}">Add to #</button></span>
+      <button class="btn sm ghost" data-sugdismiss="${esc(g.id)}">Dismiss${n > 1 ? " all" : ""}</button>
+    </div>` : ""}
+    <div class="reps">${g.items.map((x) => {
+      const url = safeUrl(x.url), orig = x.english ? x.text : "";
+      return `<div class="rep">
+        <div class="rtop"><span class="tag">${esc(x.source)}</span><span>${esc(xLang(x))}</span>
+          ${x.voted_up === true ? `<span class="pos">Recommended</span>` : x.voted_up === false ? `<span class="neg">Not recommended</span>` : ""}
+          ${typeof x.playtime_h === "number" ? `<span>${esc(x.playtime_h)} h played</span>` : ""}
+          <span>${esc(fmt((x.posted_at || "").slice(0, 10)))}</span>
+          ${url ? `<a class="qlink inl" href="${esc(url)}" target="_blank" rel="noopener">Open${ic("arrow-square-out", 13)}</a>` : ""}
+          ${S.db && n > 1 ? `<button class="btn sm ghost x" data-sugdrop="${esc(x.sid)}" aria-label="Dismiss this report">${ic("x", 14)}</button>` : ""}</div>
+        <div class="rtxt">${esc(x.english || x.text)}</div>
+        ${orig ? `<div class="rorig">${esc(orig)}</div>` : ""}
+      </div>`;
+    }).join("")}</div>
+  </div>`;
+}
+async function sugAct(action, g, extra = {}) {
+  const by = whoAmI(); if (!by) return;
+  const sids = g.items.map((x) => x.sid);
+  try {
+    const d = await post({ action, sids, by, ...extra });
+    S.sopen.delete(g.id);
+    toast(action === "suggest_add" ? `Added #${d.entry.n} to Triage` : action === "suggest_merge" ? `+${d.done.length} on #${d.into.n}` : "Dismissed");
+    render();
+  } catch (err) { toast(err.message); }
+}
+function sugEntry(g) {
+  const first = g.items[0], plats = [...new Set(g.items.flatMap((x) => x.platforms || []))];
+  const dates = g.items.map((x) => (x.posted_at || "").slice(0, 10)).filter(Boolean).sort();
+  const langs = [...new Set(g.items.map(xLang))];
+  return { kind: g.kind, area: g.area, title: g.issue, summary: first.english || first.text, source: first.source, posted_at: dates[0] || "",
+    platforms: plats, priority: "", tags: [g.items.length > 1 ? "Multiple reports" : "Single report"], extra: { langs } };
+}
+
 function highlight() {
-  const id = decodeURIComponent(location.hash.slice(1));
+  let id = decodeURIComponent(location.hash.slice(1));
+  if (/^(theme|add)=/.test(id)) return hashActions();
   if (!id || highlight.done === id) return;
-  const e = S.entries.find((x) => x.id === id);
-  if (!e) return;
-  highlight.done = id;
-  Object.assign(S, { kind: "all", stage: e.status, q: "" }); $("#q").value = ""; S.area.clear(); S.label.clear(); S.source.clear(); S.platform.clear(); S.open.add(id);
+  const hit = S.entries.find((x) => x.id === id);
+  if (!hit) return;
+  const e = rootOf(hit), id0 = id;
+  id = e.id; highlight.done = id0;
+  Object.assign(S, { kind: "all", stage: e.status, q: "", mode: "grouped", view: "board" }); $("#q").value = ""; S.area.clear(); S.label.clear(); S.source.clear(); S.platform.clear(); S.open.add(id);
   render();
   const el = document.getElementById(id);
   if (el) { el.classList.add("hl"); el.scrollIntoView({ block: "start" }); }
+}
+
+// open an entry wherever it sits (its stage, grouped view), e.g. the group something just joined
+function goTo(id) { highlight.done = ""; if (location.hash.slice(1) === id) highlight(); else location.hash = id; }
+
+// ---- impact: what an entry's theme costs the Steam review score (TrackerLinks in links.js) ----
+function renderImpact() {
+  if (window.TrackerLinks) TrackerLinks.css();
+  const head = `<div class="imphead"><h2>What costs the review score, and is it in the tracker?</h2>
+    <span class="tl-tog" role="group" aria-label="Show"><button data-tlg="" aria-pressed="${!S.gaps}">All themes</button><button data-tlg="1" aria-pressed="${S.gaps}">No ticket yet</button></span></div>`;
+  const body = S.M ? TrackerLinks.impactHtml(S.M, { gaps: S.gaps, chips: 4, entryHref: (e) => "#" + encodeURIComponent(e.id) })
+    : `<div class="empty">${S.td === false ? "The Trends data couldn't be loaded, so there's nothing to compare with. Reloading usually fixes it." : "Matching entries with Steam reviews…"}</div>`;
+  $("#list").innerHTML = head + body;
+}
+function impactBlock(e) {
+  const x = impOf(e);
+  if (!x) return "";
+  const t = x.th.length ? S.M.themes[x.th[0]] : null, r = S.M.rating;
+  const ch = t && t.negPrev ? Math.round(((t.neg - t.negPrev) / t.negPrev) * 100) : null;
+  const d = x.direct, links = [d.neg + d.pos ? `${d.neg + d.pos} Steam review${d.neg + d.pos === 1 ? "" : "s"}${d.neg ? ` (${d.neg} negative)` : ""}` : "", d.posts ? `${d.posts} other post${d.posts === 1 ? "" : "s"}` : ""].filter(Boolean).join(" and ");
+  const pick = S.db ? `<select data-themefor="${esc(e.id)}" aria-label="Theme">
+      <option value="">${x.auto ? "Guessed from its words" : "Guess from its words"}</option>
+      ${S.M.R.map((th, k) => `<option value="${esc(th.name)}" ${!x.auto && x.th[0] === k ? "selected" : ""}>${esc(th.name)}</option>`).join("")}
+      <option value="none" ${!x.auto && !x.th.length ? "selected" : ""}>No theme</option></select>` : "";
+  return `<div class="impact">
+    <div class="ih"><span class="lbl">Player impact</span>${t ? `<a class="th" href="/trends/#theme=${encodeURIComponent(t.name)}">${esc(t.name)}</a>${x.auto ? `<span class="sub">theme guessed from its words</span>` : ""}` : `<span class="sub">No Trends theme fits this entry, so there's no review count for it.</span>`}${pick}</div>
+    ${t ? `<div class="sub">${t.neg ? `<span class="big">+${TrackerLinks.fmtPts(t.cost)} pts</span> · ${t.neg} negative Steam review${t.neg === 1 ? "" : "s"} in the last 30 days are about this theme. Without them the 30-day score would be ${TrackerLinks.fmtPct(r.pct + t.cost)}% instead of ${TrackerLinks.fmtPct(r.pct)}%${ch == null ? "" : `. Negative reviews on it are ${ch > 0 ? "up" : "down"} ${Math.abs(ch)}% from the 30 days before`}.` : "No negative Steam reviews about this theme in the last 30 days."}${t.langs.length ? ` Mostly ${esc(t.langs.slice(0, 2).map(([l]) => TrackerLinks.langName(l)).join(" and "))}.` : ""}</div>` : ""}
+    ${links ? `<div class="sub">Linked to this entry: ${links}.</div>` : ""}
+    ${x.fix ? `<div class="sub">Marked fixed ${esc(fmt(x.fix.at))}: ${(Math.round(x.fix.before * 10) / 10)} negative reviews a day about this theme in the ${TrackerLinks.FIX_DAYS} days before, ${x.fix.after == null ? "too early to compare yet" : `${Math.round(x.fix.after * 10) / 10} a day since`}.</div>` : ""}
+  </div>`;
+}
+// #theme=<name> filters the board to one theme; #add=<json> opens Add with a post from the Inbox filled in
+function hashActions() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (hashActions.done === h) return; // render() ends by calling highlight(), which lands here again
+  if (h.startsWith("theme=") && S.M) {
+    hashActions.done = h;
+    const k = S.M.R.findIndex((r) => r.name === h.slice(6));
+    if (k >= 0) { Object.assign(S, { theme: k, view: "board", stage: "", sort: "impact", mode: "grouped" }); render(); window.scrollTo({ top: 0 }); }
+  } else if (h.startsWith("add=") && S.sources.length) {
+    hashActions.done = h;
+    let x = {}; try { x = JSON.parse(h.slice(4)); } catch {}
+    if (!S.db) { toast("Saving is off here, so entries can't be added"); return; }
+    openSheet(null, "", { title: x.t || "", url: safeUrl(x.u), posted_at: /^\d{4}-\d{2}-\d{2}$/.test(x.d || "") ? x.d : "", source: S.sources.includes(x.s) ? x.s : "", status: "Triage" });
+    history.replaceState(null, "", location.pathname);
+  }
 }
 
 // ---- saving ----
@@ -477,11 +837,13 @@ async function post(body) {
   const r = await fetch("/api/tracker", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const d = await r.json();
   if (!r.ok) throw new Error(d.error || "Not saved");
-  for (const x of [d.entry, d.into].filter(Boolean)) {
+  if (d.done) S.suggestions = S.suggestions.filter((x) => !d.done.includes(x.sid));
+  for (const x of [d.entry, d.into, ...(d.moved || [])].filter(Boolean)) {
     const i = S.entries.findIndex((y) => y.id === x.id);
     if (i >= 0) S.entries[i] = x; else S.entries.unshift(x);
     delete S.logs[x.id];
   }
+  indexGroups(); groupReports.c.clear(); relink();
   return d;
 }
 
@@ -500,10 +862,11 @@ function paintForm() {
   seg($("#f-platforms"), S.platforms, F.platforms, "fplatform", true);
 }
 let nameOnly = false;
-function openSheet(e, mode) {
+function openSheet(e, mode, pre) {
   editing = e || null; nameOnly = mode === "name";
+  if (!e && pre) e = pre; // a new entry with some fields filled in (from the Inbox)
   const f = $("#form");
-  $("#sheet-title").textContent = nameOnly ? "Who's making changes?" : e ? `Edit #${e.n}` : "Add entry";
+  $("#sheet-title").textContent = nameOnly ? "Who's making changes?" : editing ? `Edit #${e.n}` : "Add entry";
   f.querySelectorAll(".field, .row2").forEach((el) => (el.hidden = nameOnly && !el.contains(f.elements.by)));
   F = { kind: e?.kind || "Bug", status: e?.status || "Triage", priority: e?.priority || "3 - Medium", area: e?.area || "", tags: new Set(e?.tags || []), source: e?.source || "", platforms: new Set(e?.platforms || []) };
   paintForm();
@@ -554,10 +917,13 @@ async function save(ev) {
 function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 2600); }
 
 function csv() {
-  const cols = ["n", "kind", "status", "priority", "area", "title", "summary", "posted_at", "url", "source", "where", "platforms", "tags", "jira", "jira_url", "notes", "links", "added_by", "updated_at", "updated_by"];
+  const cols = ["n", "group", "same_player", "reports", "kind", "status", "priority", "area", "title", "summary", "posted_at", "url", "source", "where", "platforms", "tags", "jira", "jira_url", "notes", "links", "added_by", "updated_at", "updated_by"];
   const cell = (v) => { v = Array.isArray(v) ? v.join(", ") : String(v ?? ""); return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
-  const xs = sorted(S.entries.filter((e) => matches(e) && (S.stage ? e.status === S.stage : true)));
-  const body = [cols.join(","), ...xs.map((e) => cols.map((c) => cell(c === "area" ? areaOf(e) : e[c])).join(","))].join("\n");
+  const xs = sorted(S.entries.filter((e) => !isChild(e) && matches(e) && (S.stage ? e.status === S.stage : true))).flatMap(members);
+  const val = (e, c) => { const r = rootOf(e);
+    return c === "area" ? areaOf(r) : c === "group" ? (r === e ? "" : "#" + r.n) : c === "same_player" ? (same(e, r) ? "yes" : "") : c === "reports" ? (r === e ? groupCount(e) : reports(e))
+      : c === "status" ? r.status : e[c]; };
+  const body = [cols.join(","), ...xs.map((e) => cols.map((c) => cell(val(e, c))).join(","))].join("\n");
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["﻿" + body], { type: "text/csv" })), download: `feedback-tracker-${new Date().toISOString().slice(0, 10)}.csv` });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -574,7 +940,7 @@ document.addEventListener("click", async (ev) => {
   else if (d.source) { toggle(S.source, d.source); render(); }
   else if (d.platform) { toggle(S.platform, d.platform); render(); }
   else if (d.full) { S.full.add(d.full); render(); }
-  else if (d.sort) { S.sort = d.sort; document.querySelectorAll("#sort .chipbtn").forEach((b) => b.setAttribute("aria-pressed", b === t)); render(); }
+  else if (d.sort) { S.sort = d.sort; render(); }
   else if (d.move) {
     const e = S.entries.find((x) => x.id === d.move);
     if (!e || e.status === d.to) return;
@@ -584,17 +950,40 @@ document.addEventListener("click", async (ev) => {
   }
   else if (d.merge) {
     const into = (document.querySelector(`[data-mergein="${CSS.escape(d.merge)}"]`)?.value || "").trim();
-    if (!into) { toast("Type the # of the entry to merge into"); return; }
+    if (!into) { toast("Type the # of the entry to group it with"); return; }
     const by = whoAmI(); if (!by) return;
-    try { const r = await post({ action: "merge", id: d.merge, into, by }); S.open.delete(d.merge); S.open.add(r.into.id); toast(`Merged into #${r.into.n}`); render(); }
+    try { const r = await post({ action: "group", id: d.merge, into, by }); S.open.delete(d.merge); toast(`Grouped with #${r.into.n}`); goTo(r.into.id); }
     catch (err) { toast(err.message); }
   }
+  else if (d.ungroup || d.same !== undefined) {
+    const by = whoAmI(); if (!by) return;
+    try {
+      const r = await post(d.ungroup ? { action: "ungroup", id: d.ungroup, by } : { action: "same", id: d.same, same: !!d.v, by });
+      toast(d.ungroup ? `#${r.entry.n} is its own entry again` : d.v ? "Counted as the same player" : "Counted as another player");
+      if (d.ungroup) S.open.add(r.entry.id);
+      render();
+    } catch (err) { toast(err.message); }
+  }
+  else if (d.mode) { S.mode = d.mode; S.full.delete("each"); render(); }
+  else if (d.range) { setRange(d.range); render(); }
+  else if (d.ropen) { toggle(S.ropen, d.ropen); render(); }
   else if (d.edit) openSheet(S.entries.find((e) => e.id === d.edit));
   else if (d.log) {
     if (S.logs[d.log]) delete S.logs[d.log];
     else { try { S.logs[d.log] = (await (await fetch("/api/tracker?log=" + encodeURIComponent(d.log), { cache: "no-store" })).json()).log || []; } catch { S.logs[d.log] = []; } }
     render();
   }
+  else if (d.sugtoggle) { toggle(S.sopen, d.sugtoggle); render(); }
+  else if (d.sugadd) sugAct("suggest_add", S.groups.get(d.sugadd), { entry: sugEntry(S.groups.get(d.sugadd)) });
+  else if (d.sugmerge) {
+    const into = d.into || (document.querySelector(`[data-sugin="${CSS.escape(d.sugmerge)}"]`)?.value || "").trim();
+    if (!into) { toast("Type the # of the entry to add these reports to"); return; }
+    sugAct("suggest_merge", S.groups.get(d.sugmerge), { into });
+  }
+  else if (d.sugdismiss) sugAct("suggest_dismiss", S.groups.get(d.sugdismiss));
+  else if (d.sugdrop) sugAct("suggest_dismiss", { items: [{ sid: d.sugdrop }] });
+  else if (d.tlg !== undefined) { S.gaps = !!d.tlg; render(); }
+  else if (d.thclear) { S.theme = null; if (location.hash.startsWith("#theme=")) history.replaceState(null, "", location.pathname); render(); }
   else if (d.fkind) { F.kind = d.fkind; paintForm(); }
   else if (d.fstatus) { F.status = d.fstatus; paintForm(); }
   else if (d.fpriority) { F.priority = d.fpriority; paintForm(); }
@@ -605,11 +994,21 @@ document.addEventListener("click", async (ev) => {
 });
 $("#more-filters").onclick = (ev) => { const x = $("#extra-filters"); x.hidden = !x.hidden; ev.currentTarget.setAttribute("aria-expanded", !x.hidden); };
 $("#add").onclick = () => openSheet(null);
+$("#impbtn").onclick = () => { S.view = S.view === "impact" ? "board" : "impact"; render(); window.scrollTo({ top: 0 }); };
+document.addEventListener("change", async (ev) => {
+  const sel = ev.target.closest("select[data-themefor]"); if (!sel) return;
+  const by = whoAmI(); if (!by) return;
+  sel.disabled = true;
+  try { await post({ action: "theme", id: sel.dataset.themefor, theme: sel.value, by }); toast(sel.value ? (sel.value === "none" ? "No theme for this entry" : `Filed under ${sel.value}`) : "Theme guessed from its words again"); render(); }
+  catch (err) { toast(err.message); sel.disabled = false; }
+});
+$("#sugbtn").onclick = () => { S.view = S.view === "suggest" ? "board" : "suggest"; S.kind = "all"; render(); window.scrollTo({ top: 0 }); };
 $("#close").onclick = $("#cancel").onclick = () => $("#sheet").close();
 $("#form").onsubmit = save;
 $("#csv").onclick = csv;
 $("#q").oninput = (e) => { S.q = e.target.value; render(); };
-window.addEventListener("hashchange", () => { highlight.done = ""; highlight(); });
+$("#from").onchange = $("#to").onchange = () => { setRange("custom"); render(); };
+window.addEventListener("hashchange", () => { highlight.done = hashActions.done = ""; highlight(); });
 paintIcons();
 load();
 </script>
