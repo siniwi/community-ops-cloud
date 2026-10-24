@@ -134,7 +134,7 @@
       });
       let fix = null;
       const F = Date.parse(e.fixed_at || "");
-      if (!isNaN(F) && th.length) {
+      if (!isNaN(F) && th.length && /^(Fixed|Closed)/.test(e.status || "")) { // reopened entries drop the fix check
         const about = (x) => !x.up && th.some((k) => x.th.includes(k));
         const after = Math.min(FIX_DAYS, (end - F) / DAY);
         const b = recent.filter((x) => x.c >= F - FIX_DAYS * DAY && x.c < F && about(x)).length;
