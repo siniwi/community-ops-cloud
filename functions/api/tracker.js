@@ -9,11 +9,13 @@
 //
 //   GET  /api/tracker               -> { db, pending, entries, statuses, kinds, priorities, labels, sources, jira_base, slack }
 //   GET  /api/tracker?log=<id>      -> { log: [...] } change history of one entry
+//   GET  /api/tracker?lite=1        -> { db, entries } only what Trends and the Inbox need to link to entries
 //   POST /api/tracker {action:"add", entry, by}             -> { entry }
 //   POST /api/tracker {action:"update", id, set, by}        -> { entry }
 //   POST /api/tracker {action:"group", id, into, same, by}  -> { entry, into, moved } puts the report under #into's group
 //   POST /api/tracker {action:"ungroup", id, by}            -> { entry }  takes it out of its group again
 //   POST /api/tracker {action:"same", id, same, by}         -> { entry }  same player twice (counts once) or another player
+//   POST /api/tracker {action:"theme", id, theme, by}       -> { entry }  files the entry under a Trends theme ("" = guess again, "none")
 //   POST /api/tracker {action:"suggest_add", sids, entry, by}    -> { entry, done }  Suggested reports become a new entry
 //   POST /api/tracker {action:"suggest_merge", sids, into, by}   -> { into, done }   ... or extra reports on #into
 //   POST /api/tracker {action:"suggest_dismiss", sids, by}       -> { done }
@@ -22,6 +24,10 @@
 // pointing at the group's first entry (one level, never a chain). The group moves through the stages as one
 // and counts one report per player: extra.same marks the same player logging it twice. Extra reports that
 // have no row of their own (folded in at import, +1s from Suggested) sit in extra.more as {d, t, o, u, src, lang, same}.
+//
+// Trends: each entry is filed under one Trends theme (guessed from its words by /tracker/links.js, or picked by the
+// team: extra.theme), so Trends, the Inbox and the tracker can show what a theme costs the review score and which
+// entries cover it. fixed_at (when an entry last moved to "Fixed, tell players") lets them compare before and after.
 //
 // Suggested: the weekday morning run sorts new Steam reviews, Reddit posts and Steam forum threads
 // into bug / feedback / request with an English translation, and drops them in tracker_ops/ as
@@ -37,6 +43,7 @@
 // sheet's done checkbox (Open/Done) maps onto it with legacyStage(). The Community Taskforce sheet's
 // Feedback tab (Type, Category, Platform) arrives as kind, area and platforms, parked in Backlog.
 export const STATUSES = ["Triage", "Needs repro", "Needs ticket", "With dev", "Fixed, tell players", "Backlog", "Closed"];
+const FIXED = "Fixed, tell players"; // the stage that means a fix shipped (fixed_at)
 const STAGE_HINTS = {
   "Triage": "Decide what it is and how bad",
   "Needs repro": "Try it, or ask the player for details",
@@ -298,6 +305,7 @@ function replay(bundle, suggestions = []) {
       if (e) for (const [f, v] of Object.entries(op.set || {})) if (EDITABLE.has(f)) {
         e[f] = clean(f, v); e.jira_key = jiraKey(e.jira, e.jira_url);
         if (e.status === "Open" || e.status === "Done") e.status = legacyStage(e);
+        if (f === "status" && e.status === FIXED && op.at) e.fixed_at = op.at;
       }
     } else if (op.type === "group" && byId.has(op.id) && op.id !== op.into && !byId.get(op.id).dup_of) {
       const e = byId.get(op.id); e.dup_of = op.into; e.extra = { ...e.extra, same: !!op.same };
@@ -316,17 +324,29 @@ const meta = (env) => ({ statuses: STATUSES, stage_hints: STAGE_HINTS, kinds: KI
 export async function onRequestGet(ctx) {
   const { env, request } = ctx;
   const bundle = await readOps(ctx);
-  if (!env.DB) { const suggestions = []; return json({ db: false, entries: replay(bundle, suggestions), suggestions, ...meta(env) }); }
+  const q = new URL(request.url).searchParams, lite = !!q.get("lite");
+  if (!env.DB) { const suggestions = [], entries = replay(bundle, suggestions); return json(lite ? { db: false, entries: entries.map(liteOf) } : { db: false, entries, suggestions, ...meta(env) }); }
   await init(env.DB);
-  const logId = new URL(request.url).searchParams.get("log");
+  const logId = q.get("log");
   if (logId) {
     const { results } = await env.DB.prepare("SELECT at, by, field, old, new FROM tracker_log WHERE id = ? ORDER BY at DESC LIMIT 100").bind(logId).all();
     return json({ log: results });
   }
   const pending = await applyOps(ctx, env.DB, bundle);
-  const [{ results }, sug] = await env.DB.batch([env.DB.prepare("SELECT * FROM tracker ORDER BY n DESC"),
-    env.DB.prepare("SELECT data FROM tracker_suggest WHERE state = 'new' ORDER BY at DESC LIMIT 1500")]);
-  return json({ db: true, pending, entries: results.map(fromRow), suggestions: sug.results.map((r) => JSON.parse(r.data)), ...meta(env) });
+  const [{ results }, sug, fx] = await env.DB.batch([env.DB.prepare("SELECT * FROM tracker ORDER BY n DESC"),
+    env.DB.prepare("SELECT data FROM tracker_suggest WHERE state = 'new' ORDER BY at DESC LIMIT 1500"),
+    env.DB.prepare("SELECT id, MAX(at) AS at FROM tracker_log WHERE field = 'status' AND new = ? GROUP BY id").bind(JSON.stringify(FIXED))]);
+  const fixedAt = new Map(fx.results.map((r) => [r.id, r.at]));
+  const entries = results.map(fromRow).map((e) => (fixedAt.has(e.id) ? { ...e, fixed_at: fixedAt.get(e.id) } : e));
+  if (lite) return json({ db: true, entries: entries.map(liteOf) });
+  return json({ db: true, pending, entries, suggestions: sug.results.map((r) => JSON.parse(r.data)), ...meta(env) });
+}
+// The fields Trends and the Inbox use; report links, not their texts
+function liteOf(e) {
+  const x = e.extra || {};
+  return { id: e.id, n: e.n, kind: e.kind, status: e.status, priority: e.priority, area: e.area, title: e.title, summary: clip(e.summary, 400), notes: clip(e.notes, 300),
+    jira_key: e.jira_key, dup_of: e.dup_of, url: e.url, links: e.links, more: (x.more || []).map((m) => m.u || ""), same: !!x.same,
+    reports: +x.reports || 0, theme: x.theme || "", posted_at: e.posted_at, fixed_at: e.fixed_at || "" };
 }
 
 export async function onRequestPost(ctx) {
@@ -366,6 +386,15 @@ export async function onRequestPost(ctx) {
       r = await update(env.DB, root.id, { tags: [...(root.tags || []).filter((t) => t !== "Single report"), "Multiple reports"] }, by, at);
     const moved = kids.length ? (await env.DB.prepare(`SELECT * FROM tracker WHERE id IN (${kids.map(() => "?").join(", ")})`).bind(...kids.map((k) => k.id)).all()).results.map(fromRow) : [];
     return json({ entry: e, into: r, moved });
+  }
+  if (body.action === "theme") {
+    const e = await getOne(env.DB, clip(body.id, 64));
+    if (!e) return json({ error: "Entry not found." }, 404);
+    const { theme, ...rest } = e.extra || {};
+    e.extra = body.theme ? { ...rest, theme: clip(body.theme, 120) } : rest;
+    await env.DB.batch([env.DB.prepare("UPDATE tracker SET extra = ?, updated_at = ?, updated_by = ? WHERE id = ?").bind(JSON.stringify(e.extra), at, by, e.id),
+      env.DB.prepare("INSERT INTO tracker_log (at, id, by, field, old, new) VALUES (?, ?, ?, 'theme', ?, ?)").bind(at, e.id, by, JSON.stringify(theme || ""), JSON.stringify(body.theme || ""))]);
+    return json({ entry: { ...e, updated_at: at, updated_by: by } });
   }
   if (body.action === "ungroup" || body.action === "same") {
     const e = await getOne(env.DB, clip(body.id, 64));

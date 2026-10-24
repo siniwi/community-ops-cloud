@@ -51,8 +51,8 @@ print("trends data:", {k: d.get(k) for k in ("reviews_at", "forum_at", "reddit_a
       "newest forum", newest(d.get("forum", [])), "newest reddit", newest(d.get("reddit", [])), "reviews", len(d.get("reviews", [])))
 PY
 # Feedback tracker page (/tracker/) + the changes added in Claude chat (Drive tracker_ops/ -> tracker/ops.json).
-mkdir -p site/tracker && cp "$ROOT/tracker/index.html" site/tracker/index.html
-# One page menu (Trends, Inbox, Tracker) at the top of every page.
+mkdir -p site/tracker && cp "$ROOT/tracker/index.html" "$ROOT/tracker/links.js" site/tracker/
+# One page menu (Trends, Inbox, Tracker) at the top of every page, and the tracker links on Trends and the Inbox.
 step python3 -I "$ROOT/site_nav.py" site
 # Suggested tab: reports the morning Claude run sorted become suggestions; the rest wait in tracker_intake_todo.json.
 step python3 -I "$ROOT/tracker/intake.py" "$DROPS" "$ROOT/work/intake"

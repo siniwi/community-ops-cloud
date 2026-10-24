@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Put the same page menu at the top of every team-site page, so Trends, Inbox and Tracker are one tap apart.
+"""Tie the team-site pages together: the same page menu at the top of each, so Trends, Inbox and Tracker are one tap
+apart, and the tracker links on Trends and the Inbox.
 
   python site_nav.py <site_dir>
 
 Runs after the site is built (run.sh). The Trends and Inbox pages come from the Drive kit and the tracker
 from this repo; each gets the menu inserted before its first layout block, with the page itself marked as
-current. The old one-off "Trends" / "Inbox" links in those page headers are taken out. Running it twice
-changes nothing. A page that is missing or has an unexpected layout is skipped with a warning.
+current. The old one-off "Trends" / "Inbox" links in those page headers are taken out. Trends and the Inbox
+also load /tracker/links.js (copied there by run.sh), which adds what each theme costs the review score and
+which tracker entries cover it; the Inbox reads the theme keywords from tracker/rules.json, written here.
+Running it twice changes nothing. A page that is missing or has an unexpected layout is skipped with a warning.
 """
-import os, re, sys
+import json, os, re, sys
 
 # (label, path, icon) in menu order. Icons are Phosphor bold paths (256 viewBox), same set as the pages use.
 PAGES = [
@@ -22,6 +25,8 @@ TARGETS = {"trends/index.html": '<div class="shell">', "inbox/index.html": '<div
 OLD_LINKS = [r'\s*<a class="qlink" href="\.\./inbox/">Inbox</a>']
 # small layout fixes per page: the Inbox grid let wide rows push the page past a phone screen
 FIXES = {"inbox/index.html": "<style>.wrap{grid-template-columns:minmax(0,1fr)}.navrow .tabs{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}</style>"}
+# pages that load the shared tracker links (tracker/links.js) and what to call once it's there
+HOOKS = {"trends/index.html": "mountTrends", "inbox/index.html": "mountInbox"}
 MARK = "<!--sitenav-->"
 CSS = """<style>
 .sitenav{display:flex;justify-content:center;margin:0 auto 14px;padding:8px 12px 0}
@@ -64,9 +69,22 @@ def main(site):
         for rx in OLD_LINKS:
             html = re.sub(rx, "", html, count=1)
         html = html.replace(anchor, nav("/" + rel.split("/")[0] + "/") + FIXES.get(rel, "") + anchor, 1)
+        if rel in HOOKS and "</body>" in html:
+            hook = f'<script src="/tracker/links.js"></script><script>window.TrackerLinks && TrackerLinks.{HOOKS[rel]}();</script>\n'
+            html = html[:html.rindex("</body>")] + hook + html[html.rindex("</body>"):]
         with open(p, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(html)
-        print(f"site_nav: menu added to {rel}")
+        print(f"site_nav: menu added to {rel}" + (" with tracker links" if rel in HOOKS else ""))
+    # the Inbox only needs the theme keywords, not the whole Trends data file
+    try:
+        with open(os.path.join(site, "trends", "trends_data.json"), encoding="utf-8") as fh:
+            rules = json.load(fh).get("rules") or []
+        os.makedirs(os.path.join(site, "tracker"), exist_ok=True)
+        with open(os.path.join(site, "tracker", "rules.json"), "w", encoding="utf-8") as fh:
+            json.dump(rules, fh, ensure_ascii=False)
+        print(f"site_nav: {len(rules)} theme rules for the Inbox")
+    except (OSError, ValueError) as e:
+        print(f"::warning::site_nav: no theme rules for the Inbox ({e})")
 
 
 if __name__ == "__main__":
